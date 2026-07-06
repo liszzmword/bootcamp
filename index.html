@@ -156,7 +156,7 @@
   .pool.dragover { outline: 2px solid var(--ink); }
   .members { display: flex; flex-wrap: wrap; gap: 8px; align-content: flex-start; }
 
-  #teamsGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 8px; padding-bottom: 24px; }
+  #teamsGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 8px; padding-bottom: 24px; align-items: start; }
   .team-card { background: var(--canvas); border: 1px solid var(--hairline-soft); display: flex; flex-direction: column; }
   .team-card.dragover { outline: 2px solid var(--ink); outline-offset: -1px; }
   .team-card.mine { border: 2px solid var(--ink); }
@@ -188,8 +188,11 @@
   .tinfo .irow:last-child { border-bottom: none; }
   .tinfo .ilabel { width: 74px; flex-shrink: 0; font-size: 12px; font-weight: 500; color: var(--mute); }
   .tinfo .ival { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; font-size: 13px; flex-wrap: wrap; }
-  .tinfo input.pill { height: 34px; font-size: 13px; width: 100%; padding: 5px 14px; }
+  .tinfo input.pill { height: 34px; font-size: 13px; flex: 1 1 140px; width: auto; min-width: 0; padding: 5px 14px; }
   .tinfo textarea.pill { font-size: 13px; width: 100%; }
+  .save-btn { flex-shrink: 0; }
+  .save-btn:disabled { background: var(--cloud); color: var(--stone); }
+  .tinfo .irow:has(textarea) .save-btn { margin-left: auto; }
   .tinfo a { color: var(--ink); font-weight: 500; text-decoration: underline; text-underline-offset: 3px; word-break: break-all; }
   .tinfo .none { color: var(--stone); }
   .tinfo .apival { font-family: ui-monospace, Menlo, monospace; font-size: 12px; word-break: break-all; }
@@ -201,7 +204,18 @@
   .file-pill:active { opacity: .5; }
   .file-pill .fname { max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .file-pill .fsize { color: var(--mute); }
-  .file-meta { font-size: 11px; color: var(--stone); }
+  .file-meta { font-size: 11px; color: var(--stone); width: 100%; }
+
+  /* 팀원 모드: 내 조 크게 보기 */
+  #myTeamBox .team-card { border: 2px solid var(--ink); }
+  #myTeamBox .team-head { padding: 20px 20px 12px; }
+  #myTeamBox .team-head .tname { font-size: 26px; }
+  #myTeamBox .team-card .members { padding: 0 20px 16px; }
+  #myTeamBox .pchip { font-size: 14px; padding: 7px 16px; }
+  #myTeamBox .tinfo .irow { padding: 13px 20px; }
+  #myTeamBox .tinfo .ilabel { width: 86px; font-size: 13px; }
+  #myTeamBox .tinfo .ival { font-size: 14px; }
+  #myTeamBox .tinfo input.pill { height: 40px; font-size: 14px; }
 
   dialog {
     border: 1px solid var(--hairline); border-radius: 0; padding: 32px; width: 360px; max-width: 92vw;
@@ -367,7 +381,11 @@
       <div class="pool" id="unassigned"><div class="members"></div></div>
     </div>
 
-    <div class="section-head">Teams <span class="sub" id="teamsSub"></span></div>
+    <div id="mySection" hidden>
+      <div class="section-head">My Team <span class="sub">내 조 — 링크·파일을 여기서 등록하세요</span></div>
+      <div id="myTeamBox"></div>
+    </div>
+    <div class="section-head"><span id="teamsHeadLabel">Teams</span> <span class="sub" id="teamsSub"></span></div>
     <div id="teamsGrid"><span style="color:var(--stone);font-size:13px">불러오는 중…</span></div>
 
     <footer class="fine">
@@ -516,7 +534,8 @@ function applyData(d) {
 
 function isEditing() {
   const a = document.activeElement;
-  return a && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA') && a.closest('main, aside');
+  if (a && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA') && a.closest('main, aside')) return true;
+  return !!document.querySelector('.save-btn:not(:disabled)'); // 저장 안 누른 입력이 있으면 화면 갱신 보류
 }
 
 async function refresh(force = false) {
@@ -550,14 +569,6 @@ async function act(fn, okMsg) {
     toast('⚠ ' + errMsg(e));
     refresh(true);
   }
-}
-/* 텍스트 입력 자동저장(디바운스): 재렌더 없이 조용히 저장. ms=0이면 즉시(blur 시) */
-const debounces = {};
-function debounceSave(key, fn, ms = 600) {
-  clearTimeout(debounces[key]);
-  debounces[key] = setTimeout(async () => {
-    try { await fn(); syncOk(); } catch (e) { toast('⚠ 저장 실패: ' + errMsg(e)); }
-  }, ms);
 }
 
 /* 권한 (UI 표시용 — 실제 강제는 서버 RLS/RPC) */
@@ -682,26 +693,35 @@ function renderBoard() {
   $('#teamsSub').textContent = `${state.teamCount}팀 · ${state.people.filter(p => p.team != null).length}명 배정`;
 
   const grid = $('#teamsGrid');
+  const myBox = $('#myTeamBox');
   grid.replaceChildren();
+  myBox.replaceChildren();
+  const mt = session.role === 'member' ? myTeam() : null;
+  $('#mySection').hidden = mt == null;
+  $('#teamsHeadLabel').textContent = mt == null ? 'Teams' : 'Other Teams';
   state.teams.forEach((t, i) => {
-    const members = state.people.filter(p => p.team === i);
-    const mine = session.role === 'member' && myTeam() === i;
-
-    const head = el('div', { class: 'team-head' },
-      el('span', { class: 'dot', style: `background:${teamColor(i)}` }),
-      isAdmin()
-        ? el('input', { class: 'tname', value: t.name, onchange: e => act(() => rpc('rename_team', { p_idx: t.idx, p_name: e.target.value })) })
-        : el('span', { class: 'tname' }, t.name),
-      mine ? el('span', { class: 'mytag' }, 'MY TEAM') : null,
-      el('span', { class: 'cnt' }, `${members.length}명`));
-
-    const card = el('div', { class: 'team-card' + (mine ? ' mine' : '') },
-      head,
-      el('div', { class: 'members' }, members.map(chipFor)),
-      teamInfo(t, i));
-    makeDropTarget(card, i);
-    grid.append(card);
+    const card = buildTeamCard(t, i, i === mt);
+    if (i === mt) myBox.append(card);
+    else grid.append(card);
   });
+}
+
+function buildTeamCard(t, i, mine) {
+  const members = state.people.filter(p => p.team === i);
+  const head = el('div', { class: 'team-head' },
+    el('span', { class: 'dot', style: `background:${teamColor(i)}` }),
+    isAdmin()
+      ? el('input', { class: 'tname', value: t.name, onchange: e => act(() => rpc('rename_team', { p_idx: t.idx, p_name: e.target.value })) })
+      : el('span', { class: 'tname' }, t.name),
+    mine ? el('span', { class: 'mytag' }, 'MY TEAM') : null,
+    el('span', { class: 'cnt' }, `${members.length}명`));
+
+  const card = el('div', { class: 'team-card' },
+    head,
+    el('div', { class: 'members' }, members.map(chipFor)),
+    teamInfo(t, i));
+  makeDropTarget(card, i);
+  return card;
 }
 
 /* 팀 정보 행 — 권한에 따라 입력/보기 전환 (실제 검증은 서버) */
@@ -710,14 +730,31 @@ function teamInfo(t, i) {
   const box = el('div', { class: 'tinfo' });
   const row = (label, ...val) => box.append(el('div', { class: 'irow' }, el('span', { class: 'ilabel' }, label), el('span', { class: 'ival' }, ...val)));
 
+  /* [저장] 버튼: 입력하면 활성화 → 클릭 시 저장 → ✓ 저장됨 */
+  const makeSave = (inp, doSave) => {
+    const btn = el('button', { class: 'btn sm save-btn', disabled: true, onclick: async () => {
+      btn.disabled = true;
+      btn.textContent = '저장 중…';
+      try {
+        await doSave(inp.value);
+        btn.textContent = '✓ 저장됨';
+        toast('저장했습니다');
+        syncOk();
+      } catch (e) {
+        btn.textContent = '저장';
+        btn.disabled = false;
+        toast('⚠ 저장 실패: ' + errMsg(e));
+      }
+    } }, '저장');
+    inp.addEventListener('input', () => { btn.disabled = false; btn.textContent = '저장'; });
+    if (inp.tagName === 'INPUT') inp.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); if (!btn.disabled) btn.click(); } });
+    return btn;
+  };
+
   // API 키: 관리자만 수정, 해당 조 팀원은 열람 (다른 사람에겐 서버가 아예 안 내려줌)
   if (isAdmin()) {
-    const saveApi = (e, ms) => {
-      const v = e.target.value.trim();
-      debounceSave('api' + t.idx, () => rpc('set_team_api', { p_idx: t.idx, p_api: v }), ms);
-    };
-    row('API 키', el('input', { class: 'pill', value: t.api || '', placeholder: 'sk-...',
-      oninput: e => saveApi(e), onchange: e => saveApi(e, 0) }));
+    const inp = el('input', { class: 'pill', value: t.api || '', placeholder: 'sk-...' });
+    row('API 키', inp, makeSave(inp, async v => { await rpc('set_team_api', { p_idx: t.idx, p_api: v.trim() }); t.api = v.trim(); }));
   } else if (t.api !== null && session.role === 'member' && myTeam() === i) {
     row('API 키', t.api
       ? [el('span', { class: 'apival' }, t.api), el('button', { class: 'icon-btn', title: '복사', onclick: () => navigator.clipboard?.writeText(t.api).then(() => toast('API 키를 복사했습니다')) }, '⧉')]
@@ -726,12 +763,8 @@ function teamInfo(t, i) {
 
   for (const [key, label] of [['ppt', 'PPT 링크'], ['link', '서비스']]) {
     if (edit) {
-      const saveField = (e, ms) => {
-        const v = e.target.value.trim();
-        debounceSave(key + t.idx, () => rpc('update_team_field', { p_idx: t.idx, p_field: key, p_value: v }), ms);
-      };
-      row(label, el('input', { class: 'pill', value: t[key] || '', placeholder: 'https://...',
-        oninput: e => saveField(e), onchange: e => saveField(e, 0) }));
+      const inp = el('input', { class: 'pill', value: t[key] || '', placeholder: 'https://...' });
+      row(label, inp, makeSave(inp, async v => { await rpc('update_team_field', { p_idx: t.idx, p_field: key, p_value: v.trim() }); t[key] = v.trim(); }));
     } else {
       row(label, /^https?:\/\//.test(t[key] || '')
         ? el('a', { href: t[key], target: '_blank' }, t[key].replace(/^https?:\/\//, '').slice(0, 40) + (t[key].length > 48 ? '…' : ''))
@@ -752,12 +785,8 @@ function teamInfo(t, i) {
   row('PPT 파일', ...fileBits);
 
   if (edit) {
-    const saveMemo = (e, ms) => {
-      const v = e.target.value;
-      debounceSave('memo' + t.idx, () => rpc('update_team_field', { p_idx: t.idx, p_field: 'memo', p_value: v }), ms);
-    };
-    row('메모', el('textarea', { class: 'pill', rows: 2,
-      oninput: e => saveMemo(e), onchange: e => saveMemo(e, 0) }, t.memo || ''));
+    const ta = el('textarea', { class: 'pill', rows: 2 }, t.memo || '');
+    row('메모', ta, makeSave(ta, async v => { await rpc('update_team_field', { p_idx: t.idx, p_field: 'memo', p_value: v }); t.memo = v; }));
   } else if (t.memo) {
     row('메모', el('span', {}, t.memo));
   }
