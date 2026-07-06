@@ -1,0 +1,1129 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BOOTCAMP TEAM BOARD</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎯</text></svg>">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+  /* ===== DESIGN.md 토큰 ===== */
+  :root {
+    color-scheme: light;
+    --ink: #111111; --canvas: #ffffff; --cloud: #f5f5f5;
+    --charcoal: #39393b; --mute: #707072; --stone: #9e9ea0;
+    --hairline: #cacacb; --hairline-soft: #e5e5e5;
+    --sale: #d30005; --success: #007d48; --info: #1151ff;
+    --font-ui: "Helvetica Neue", -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", Arial, sans-serif;
+    --font-display: "Futura", "Avenir Next Condensed", "Arial Narrow", -apple-system, "Apple SD Gothic Neo", sans-serif;
+    --r-md: 24px; --r-pill: 30px;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body {
+    font-family: var(--font-ui); font-size: 14px; line-height: 1.5;
+    background: var(--canvas); color: var(--ink);
+    height: 100vh; display: flex; flex-direction: column; overflow: hidden;
+  }
+  body:not([data-role="admin"]) .admin-only { display: none !important; }
+
+  .utility-bar {
+    background: var(--cloud); height: 36px; flex-shrink: 0;
+    display: flex; align-items: center; gap: 10px; padding: 0 24px;
+    font-size: 12px; font-weight: 500;
+  }
+  .utility-bar .spacer { flex: 1; }
+  .utility-bar button {
+    background: none; border: none; font: inherit; cursor: pointer; color: var(--ink);
+    padding: 2px 4px; text-decoration: underline; text-underline-offset: 3px;
+  }
+  .utility-bar .muted { color: var(--mute); }
+  #uSync { color: var(--mute); }
+  #uSync.err { color: var(--sale); }
+
+  .primary-nav {
+    background: var(--canvas); height: 60px; flex-shrink: 0;
+    display: flex; align-items: center; gap: 24px; padding: 0 24px;
+    box-shadow: inset 0 -1px 0 var(--hairline-soft);
+  }
+  .wordmark {
+    font-family: var(--font-display); font-weight: 700; font-size: 22px;
+    letter-spacing: .5px; text-transform: uppercase; line-height: .9; white-space: nowrap;
+  }
+  .wordmark small { display: block; font-family: var(--font-ui); font-size: 9px; font-weight: 500; letter-spacing: 2px; color: var(--mute); }
+  .role-chips { margin-left: auto; display: flex; gap: 8px; }
+  .chip-btn {
+    font: inherit; font-size: 14px; font-weight: 500; cursor: pointer;
+    background: var(--canvas); color: var(--ink); border: 1px solid var(--hairline);
+    border-radius: var(--r-pill); padding: 8px 16px; height: 40px;
+  }
+  .chip-btn.active { background: var(--ink); color: var(--canvas); border-color: var(--ink); }
+
+  .btn {
+    font: inherit; font-size: 14px; font-weight: 500; cursor: pointer;
+    border: none; border-radius: var(--r-pill); padding: 0 24px; height: 44px;
+    background: var(--cloud); color: var(--ink); white-space: nowrap;
+  }
+  .btn.primary { background: var(--ink); color: var(--canvas); }
+  .btn:active { opacity: .5; }
+  .btn:disabled { opacity: .4; cursor: default; }
+  .btn.sm { height: 34px; padding: 0 16px; font-size: 13px; }
+  .icon-btn {
+    width: 34px; height: 34px; border-radius: 9999px; border: none; cursor: pointer;
+    background: var(--cloud); color: var(--ink); font-size: 14px; flex-shrink: 0;
+  }
+  .icon-btn:active { opacity: .5; }
+  input.pill, select.pill, textarea.pill {
+    font: inherit; font-size: 14px; border: none; background: var(--cloud); color: var(--ink);
+    border-radius: var(--r-md); padding: 8px 16px; height: 40px;
+  }
+  textarea.pill { height: auto; resize: vertical; }
+  input.pill:focus, select.pill:focus, textarea.pill:focus {
+    outline: 2px solid var(--ink); background: var(--canvas);
+    box-shadow: 0 0 0 6px var(--cloud);
+  }
+
+  .layout { flex: 1; display: flex; min-height: 0; }
+
+  aside {
+    width: 320px; flex-shrink: 0; background: var(--canvas);
+    border-right: 1px solid var(--hairline-soft);
+    display: flex; flex-direction: column; min-height: 0;
+  }
+  .side-label {
+    font-family: var(--font-display); text-transform: uppercase; font-weight: 700;
+    font-size: 16px; letter-spacing: 1px; padding: 18px 18px 8px;
+  }
+  aside .pad { padding: 0 18px 14px; border-bottom: 1px solid var(--hairline-soft); }
+  #dropzone {
+    border: 1px dashed var(--hairline); padding: 14px 10px; text-align: center;
+    color: var(--mute); font-size: 12px; font-weight: 500; cursor: pointer;
+  }
+  #dropzone.over, #dropzone:hover { border-color: var(--ink); color: var(--ink); background: var(--cloud); }
+  .roster-tools { display: flex; gap: 8px; margin-top: 8px; }
+  .roster-tools input { flex: 1; min-width: 0; }
+  #pasteArea { width: 100%; margin-top: 8px; display: none; }
+  #rosterStats { font-size: 12px; font-weight: 500; color: var(--mute); padding: 10px 18px; border-bottom: 1px solid var(--hairline-soft); }
+  #rosterList { flex: 1; overflow-y: auto; padding: 4px 10px; }
+  .person-row { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-bottom: 1px solid var(--hairline-soft); }
+  .person-row:hover { background: var(--cloud); }
+  .person-row .who { flex: 1; min-width: 0; }
+  .person-row .nm { font-weight: 500; font-size: 14px; }
+  .person-row .dp { font-size: 11px; color: var(--mute); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .person-row select { font: inherit; font-size: 11px; font-weight: 500; border: 1px solid var(--hairline); background: var(--canvas); border-radius: var(--r-pill); padding: 3px 6px; width: 76px; }
+  .person-row .x { border: none; background: none; color: var(--stone); cursor: pointer; font-size: 13px; padding: 2px 4px; }
+  .person-row .x:hover { color: var(--sale); }
+  .tbadge { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 500; color: var(--charcoal); white-space: nowrap; }
+  .dot { width: 12px; height: 12px; border-radius: 9999px; flex-shrink: 0; box-shadow: inset 0 0 0 1px rgba(0,0,0,.08); }
+
+  main { flex: 1; overflow-y: auto; min-width: 0; padding: 24px 24px 0; }
+  .section-head {
+    font-family: var(--font-display); text-transform: uppercase; font-weight: 700;
+    font-size: 24px; letter-spacing: 1px; line-height: 1.2; margin: 48px 0 12px;
+    display: flex; align-items: baseline; gap: 12px;
+  }
+  .section-head:first-child { margin-top: 0; }
+  .section-head .sub { font-family: var(--font-ui); font-size: 12px; font-weight: 500; color: var(--mute); letter-spacing: 0; text-transform: none; }
+
+  .notice { background: var(--ink); color: var(--canvas); padding: 40px 40px 32px; position: relative; }
+  .notice .kicker {
+    font-family: var(--font-display); font-weight: 700; text-transform: uppercase;
+    font-size: 56px; line-height: .9; letter-spacing: 1px; margin-bottom: 16px;
+  }
+  .notice .body { font-size: 16px; line-height: 1.6; white-space: pre-wrap; max-width: 720px; }
+  .notice .body.empty { color: var(--stone); }
+  .notice .meta { margin-top: 16px; font-size: 12px; font-weight: 500; color: var(--stone); }
+  .notice .edit-btn {
+    position: absolute; right: 32px; bottom: 28px;
+    background: var(--canvas); color: var(--ink); border: none; cursor: pointer;
+    font: inherit; font-size: 14px; font-weight: 500; border-radius: var(--r-pill); padding: 12px 24px;
+  }
+  .notice .edit-btn:active { opacity: .5; }
+  .notice textarea {
+    width: 100%; max-width: 720px; min-height: 110px; font: inherit; font-size: 15px;
+    background: var(--canvas); color: var(--ink); border: none; border-radius: 0; padding: 14px 16px; resize: vertical;
+  }
+  .notice .edit-actions { margin-top: 12px; display: flex; gap: 8px; }
+
+  .toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 8px; }
+  .toolbar .group-gap { width: 16px; }
+  .count-pill { display: inline-flex; align-items: center; gap: 8px; background: var(--cloud); border-radius: var(--r-pill); padding: 0 8px 0 20px; height: 44px; font-weight: 500; }
+  .count-pill input { width: 44px; border: none; background: none; font: inherit; font-size: 15px; font-weight: 500; text-align: center; }
+  .count-pill input:focus { outline: none; }
+  .hint { font-size: 12px; font-weight: 500; color: var(--mute); margin: 8px 0 0; }
+
+  .pool { background: var(--cloud); padding: 16px 20px; min-height: 64px; }
+  .pool.dragover { outline: 2px solid var(--ink); }
+  .members { display: flex; flex-wrap: wrap; gap: 8px; align-content: flex-start; }
+
+  #teamsGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 8px; padding-bottom: 24px; }
+  .team-card { background: var(--canvas); border: 1px solid var(--hairline-soft); display: flex; flex-direction: column; }
+  .team-card.dragover { outline: 2px solid var(--ink); outline-offset: -1px; }
+  .team-card.mine { border: 2px solid var(--ink); }
+  .team-head { display: flex; align-items: center; gap: 10px; padding: 16px 16px 10px; }
+  .team-head .tname {
+    font-family: var(--font-display); font-weight: 700; font-size: 18px; letter-spacing: .5px;
+    text-transform: uppercase; border: none; background: none; padding: 0; min-width: 0; flex: 1;
+  }
+  .team-head input.tname:focus { outline: none; border-bottom: 2px solid var(--ink); }
+  .team-head .cnt { font-size: 12px; font-weight: 500; color: var(--mute); white-space: nowrap; }
+  .mytag { font-size: 10px; font-weight: 700; letter-spacing: 1.5px; background: var(--ink); color: var(--canvas); padding: 3px 10px; border-radius: var(--r-pill); }
+  .team-card .members { padding: 0 16px 14px; min-height: 36px; }
+
+  .pchip {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--canvas); border: 1px solid var(--hairline); border-radius: var(--r-pill);
+    padding: 5px 12px; font-size: 12px; font-weight: 500; user-select: none;
+  }
+  .pchip[draggable="true"] { cursor: grab; }
+  .pchip[draggable="true"]:active { cursor: grabbing; }
+  .pchip.pinned { background: var(--ink); color: var(--canvas); border-color: var(--ink); }
+  .pchip .pinbtn { cursor: pointer; font-size: 10px; opacity: .4; }
+  .pchip.pinned .pinbtn { opacity: 1; }
+  .pchip .out { cursor: pointer; color: inherit; opacity: .5; padding: 0 2px; }
+  .pchip .out:hover { opacity: 1; }
+
+  .tinfo { border-top: 1px solid var(--hairline-soft); }
+  .tinfo .irow { display: flex; align-items: center; gap: 10px; padding: 10px 16px; border-bottom: 1px solid var(--hairline-soft); }
+  .tinfo .irow:last-child { border-bottom: none; }
+  .tinfo .ilabel { width: 74px; flex-shrink: 0; font-size: 12px; font-weight: 500; color: var(--mute); }
+  .tinfo .ival { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; font-size: 13px; flex-wrap: wrap; }
+  .tinfo input.pill { height: 34px; font-size: 13px; width: 100%; padding: 5px 14px; }
+  .tinfo textarea.pill { font-size: 13px; width: 100%; }
+  .tinfo a { color: var(--ink); font-weight: 500; text-decoration: underline; text-underline-offset: 3px; word-break: break-all; }
+  .tinfo .none { color: var(--stone); }
+  .tinfo .apival { font-family: ui-monospace, Menlo, monospace; font-size: 12px; word-break: break-all; }
+  .file-pill {
+    display: inline-flex; align-items: center; gap: 8px; max-width: 100%;
+    background: var(--cloud); border-radius: var(--r-pill); padding: 6px 14px;
+    font-size: 12px; font-weight: 500; cursor: pointer; border: none; font-family: inherit;
+  }
+  .file-pill:active { opacity: .5; }
+  .file-pill .fname { max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .file-pill .fsize { color: var(--mute); }
+  .file-meta { font-size: 11px; color: var(--stone); }
+
+  dialog {
+    border: 1px solid var(--hairline); border-radius: 0; padding: 32px; width: 360px; max-width: 92vw;
+    font-family: var(--font-ui);
+  }
+  dialog::backdrop { background: rgba(17,17,17,.36); }
+  dialog h2 { font-family: var(--font-display); text-transform: uppercase; font-size: 24px; font-weight: 700; letter-spacing: 1px; line-height: 1.1; margin-bottom: 6px; }
+  dialog .desc { font-size: 13px; color: var(--mute); margin-bottom: 18px; }
+  dialog .field { margin-bottom: 10px; }
+  dialog .field input { width: 100%; }
+  dialog .err { color: var(--sale); font-size: 12.5px; font-weight: 500; min-height: 18px; margin: 4px 0 8px; }
+  dialog .actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 8px; }
+
+  footer.fine {
+    padding: 24px 0 16px; border-top: 1px solid var(--hairline); margin-top: 24px;
+    font-size: 9px; font-weight: 500; line-height: 1.75; color: var(--mute);
+  }
+
+  #toast {
+    position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%);
+    background: var(--ink); color: var(--canvas); padding: 12px 24px; border-radius: var(--r-pill);
+    font-size: 13px; font-weight: 500; opacity: 0; pointer-events: none; transition: opacity .2s; z-index: 99; max-width: 84vw;
+  }
+  #toast.show { opacity: 1; }
+
+  /* 초기 설정 안내 오버레이 */
+  #setup {
+    position: fixed; inset: 0; background: var(--canvas); z-index: 50;
+    display: none; align-items: center; justify-content: center; padding: 24px;
+  }
+  #setup .box { max-width: 560px; }
+  #setup h1 { font-family: var(--font-display); text-transform: uppercase; font-size: 40px; font-weight: 700; line-height: .9; margin-bottom: 20px; }
+  #setup ol { padding-left: 20px; font-size: 14px; line-height: 2; }
+  #setup code { background: var(--cloud); padding: 2px 8px; font-size: 12.5px; }
+
+  @media (max-width: 900px) {
+    body { overflow: auto; height: auto; }
+    .layout { flex-direction: column; }
+    aside { width: 100%; max-height: 50vh; border-right: none; border-bottom: 1px solid var(--hairline); }
+    .notice .kicker { font-size: 40px; }
+    .primary-nav { height: auto; padding: 10px 16px; flex-wrap: wrap; gap: 10px; }
+    main { padding: 16px 16px 0; }
+    .section-head { margin-top: 32px; }
+  }
+</style>
+</head>
+<body data-role="viewer">
+
+<div id="setup">
+  <div class="box">
+    <h1>Setup<br>Required</h1>
+    <ol>
+      <li><a href="https://supabase.com" target="_blank">supabase.com</a>에서 프로젝트를 만듭니다.</li>
+      <li>SQL Editor에서 <code>supabase-setup.sql</code>을 실행합니다.</li>
+      <li>Authentication → Sign In / Up에서 <b>Allow anonymous sign-ins</b>를 켭니다.</li>
+      <li>Project Settings → API의 <b>Project URL</b>과 <b>anon public key</b>를<br><code>index.html</code> 상단 <code>CONFIG</code>에 붙여넣습니다.</li>
+    </ol>
+    <p style="margin-top:16px;font-size:12px;color:var(--mute)">자세한 순서는 README.md 참고</p>
+  </div>
+</div>
+
+<div class="utility-bar">
+  <span id="uStats" class="muted"></span>
+  <span id="uSync"></span>
+  <span class="spacer"></span>
+  <span id="uRole"></span>
+  <button id="uChangePw" class="admin-only">비밀번호 변경</button>
+  <button id="uLogout" hidden>로그아웃</button>
+</div>
+
+<nav class="primary-nav">
+  <div class="wordmark">Bootcamp<small>TEAM BOARD</small></div>
+  <div class="role-chips">
+    <button class="chip-btn" data-r="viewer">둘러보기</button>
+    <button class="chip-btn" data-r="member">팀원</button>
+    <button class="chip-btn" data-r="admin">관리자</button>
+  </div>
+</nav>
+
+<div class="layout">
+  <aside class="admin-only">
+    <div class="side-label">Roster</div>
+    <div class="pad">
+      <div id="dropzone">엑셀(.xlsx)/CSV 업로드 — 클릭 또는 드래그<br><span style="font-size:11px;color:var(--stone)">명단이 바뀌면 다시 올리면 됩니다 (배정 유지)</span></div>
+      <input type="file" id="fileInput" accept=".xlsx,.xls,.csv,.txt" hidden>
+      <div class="roster-tools">
+        <button class="btn sm" id="btnPaste" style="flex:1">이름 붙여넣기</button>
+        <button class="icon-btn" id="btnClearAll" title="명단 전체 삭제">🗑</button>
+      </div>
+      <textarea id="pasteArea" class="pill" rows="4" placeholder="한 줄에 한 명씩 (엑셀 표 복사-붙여넣기 가능)"></textarea>
+      <button class="btn sm primary" id="btnApplyPaste" style="display:none;width:100%;margin-top:8px">적용</button>
+      <div class="roster-tools">
+        <input id="newName" class="pill" placeholder="이름 직접 추가" style="height:34px">
+        <button class="btn sm" id="btnAdd">추가</button>
+      </div>
+      <div class="roster-tools">
+        <input id="filter" class="pill" placeholder="이름/소속 검색" style="height:34px">
+      </div>
+    </div>
+    <div id="rosterStats"></div>
+    <div id="rosterList"></div>
+  </aside>
+
+  <main>
+    <section class="notice" id="noticeTile">
+      <div class="kicker">Notice</div>
+      <div id="noticeView">
+        <div class="body" id="noticeBody"></div>
+        <div class="meta" id="noticeMeta"></div>
+      </div>
+      <div id="noticeEdit" hidden>
+        <textarea id="noticeInput" placeholder="전체 공지 내용을 입력하세요"></textarea>
+        <div class="edit-actions">
+          <button class="btn sm" id="noticeCancel" style="background:var(--canvas)">취소</button>
+          <button class="btn sm" id="noticeSave" style="background:var(--canvas)"><b>저장</b></button>
+        </div>
+      </div>
+      <button class="edit-btn admin-only" id="noticeEditBtn">공지 수정</button>
+    </section>
+
+    <div class="admin-only">
+      <div class="section-head">Assign <span class="sub">관리자 전용</span></div>
+      <div class="toolbar">
+        <button class="btn primary" id="btnRandom">🎲 랜덤 배정</button>
+        <span class="count-pill">팀 수 <input type="number" id="teamCount" min="1" max="15"></span>
+        <button class="btn" id="btnReset">배정 초기화</button>
+        <span class="group-gap"></span>
+        <button class="btn" id="btnCsv">CSV 다운로드</button>
+        <button class="btn" id="btnCopy">결과 복사</button>
+        <span class="group-gap"></span>
+        <button class="btn" id="btnCode">참여코드</button>
+      </div>
+      <div class="hint">이름 칩을 드래그해 팀 이동(자동 고정 📌) · 📌 클릭으로 고정 해제 · 랜덤 배정은 고정 인원을 제외하고 섞습니다</div>
+      <div class="section-head" style="font-size:16px">Unassigned <span class="sub" id="unCnt"></span></div>
+      <div class="pool" id="unassigned"><div class="members"></div></div>
+    </div>
+
+    <div class="section-head">Teams <span class="sub" id="teamsSub"></span></div>
+    <div id="teamsGrid"><span style="color:var(--stone);font-size:13px">불러오는 중…</span></div>
+
+    <footer class="fine">
+      데이터는 Supabase에 저장되어 모든 접속자에게 실시간 공유됩니다. 팀원은 본인 조의 링크·파일만 수정할 수 있으며 권한은 서버에서 검증됩니다.<br>
+      팀원 로그인 무단 사용이 걱정되면 관리자 메뉴에서 참여코드를 설정하세요. © 2026 BOOTCAMP TEAM BOARD
+    </footer>
+  </main>
+</div>
+
+<dialog id="dlgAuth">
+  <h2 id="authTitle">Admin</h2>
+  <div class="desc" id="authDesc"></div>
+  <div class="field" id="fCur" hidden><input type="password" id="pwCur" class="pill" placeholder="현재 비밀번호"></div>
+  <div class="field"><input type="password" id="pw1" class="pill" placeholder="비밀번호"></div>
+  <div class="field" id="fPw2" hidden><input type="password" id="pw2" class="pill" placeholder="비밀번호 확인"></div>
+  <div class="err" id="authErr"></div>
+  <div class="actions">
+    <button class="btn sm" id="authCancel">취소</button>
+    <button class="btn sm primary" id="authOk">확인</button>
+  </div>
+</dialog>
+
+<dialog id="dlgMember">
+  <h2>Team Login</h2>
+  <div class="desc">명단에 있는 본인 이름을 입력하세요. 본인 조의 PPT·서비스 링크와 파일을 관리할 수 있습니다.</div>
+  <div class="field">
+    <input id="memberName" class="pill" list="nameList" placeholder="이름">
+    <datalist id="nameList"></datalist>
+  </div>
+  <div class="field" id="fCode" hidden><input id="memberCode" class="pill" placeholder="참여코드"></div>
+  <div class="err" id="memberErr"></div>
+  <div class="actions">
+    <button class="btn sm" id="memberCancel">취소</button>
+    <button class="btn sm primary" id="memberOk">확인</button>
+  </div>
+</dialog>
+
+<input type="file" id="pptInput" hidden accept=".ppt,.pptx,.pdf,.key,.zip,.pptm">
+<div id="toast"></div>
+
+<script>
+'use strict';
+
+/* ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+   여기에 본인 Supabase 프로젝트 값을 붙여넣으세요.
+   (Supabase 대시보드 → Project Settings → API)
+   ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★ */
+const CONFIG = {
+  SUPABASE_URL: '',      // 예: 'https://abcdefghijk.supabase.co'
+  SUPABASE_ANON_KEY: '', // anon public 키 (secret 키 아님!)
+};
+
+const $ = s => document.querySelector(s);
+const MAX_FILE_MB = 50; // Supabase 무료 플랜 파일 업로드 한도
+
+let sb = null;
+let authError = null;
+let state = { teamCount: 5, people: [], teams: [], notice: { text: '', updatedAt: null }, accessCodeRequired: false, adminSet: false };
+let session = { role: 'viewer', personId: null };
+let filterText = '';
+let uploadTarget = null;
+let lastSnap = '';
+
+/* ---------- 헬퍼 ---------- */
+function el(tag, attrs = {}, ...children) {
+  const n = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (k === 'class') n.className = v;
+    else if (k.startsWith('on')) n.addEventListener(k.slice(2), v);
+    else if (v !== false && v != null) n.setAttribute(k, v === true ? '' : v);
+  }
+  for (const c of children.flat(9)) if (c != null) n.append(c);
+  return n;
+}
+let toastTimer;
+function toast(msg) {
+  const t = $('#toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2800);
+}
+const fmtSize = b => b >= 1048576 ? (b / 1048576).toFixed(1) + 'MB' : Math.max(1, Math.round(b / 1024)) + 'KB';
+const fmtDate = iso => iso ? new Date(iso).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
+const teamColor = i => `hsl(${(i * 137.5) % 360} 62% 52%)`;
+
+const ERR_MAP = {
+  BAD_PASSWORD: '비밀번호가 일치하지 않습니다.',
+  PW_TOO_SHORT: '비밀번호는 4자 이상이어야 합니다.',
+  BAD_CODE: '참여코드가 올바르지 않습니다.',
+  NO_NAME: '명단에 없는 이름입니다.',
+  NO_TEAM: '아직 팀이 배정되지 않았습니다. 관리자에게 문의하세요.',
+  NOT_ADMIN: '관리자 권한이 필요합니다.',
+  NOT_ALLOWED: '이 항목을 수정할 권한이 없습니다.',
+  NOT_AUTHENTICATED: '연결 세션이 없습니다. 새로고침 후 다시 시도하세요.',
+  EMPTY_ROSTER: '명단에서 이름을 찾지 못했습니다.',
+  'duplicate key': '같은 이름이 이미 있습니다.',
+};
+function errMsg(e) {
+  const m = (e && e.message) || String(e);
+  for (const k in ERR_MAP) if (m.includes(k)) return ERR_MAP[k];
+  return m;
+}
+
+/* ---------- Supabase 데이터 계층 ---------- */
+async function ensureAuth() {
+  const { data: { session: s } } = await sb.auth.getSession();
+  if (s) return;
+  const { error } = await sb.auth.signInAnonymously();
+  if (error) {
+    authError = '접속 세션 생성 실패: ' + error.message + ' — Supabase에서 "Allow anonymous sign-ins"가 켜져 있는지 확인하세요.';
+    throw new Error(authError);
+  }
+}
+
+async function rpc(fn, args) {
+  const { data, error } = await sb.rpc(fn, args);
+  if (error) throw error;
+  return data;
+}
+
+async function fetchAll() {
+  const [pe, te, sec, st, pr] = await Promise.all([
+    sb.from('people').select('id,name,dept,team,pin'),
+    sb.from('teams').select('idx,name,ppt,link,memo,ppt_file').order('idx'),
+    sb.from('team_secrets').select('idx,api'),
+    sb.from('settings').select('*').eq('id', 1).single(),
+    sb.from('profiles').select('role,person_id').maybeSingle(),
+  ]);
+  for (const r of [pe, te, sec, st, pr]) if (r.error) throw r.error;
+  return { people: pe.data, teams: te.data, secrets: sec.data, settings: st.data, profile: pr.data };
+}
+
+function applyData(d) {
+  state.teamCount = d.settings.team_count;
+  state.notice = { text: d.settings.notice, updatedAt: d.settings.notice_updated_at };
+  state.accessCodeRequired = d.settings.access_code_required;
+  state.adminSet = d.settings.admin_set;
+  const secrets = new Map(d.secrets.map(s => [s.idx, s.api]));
+  state.teams = d.teams
+    .filter(t => t.idx < state.teamCount)
+    .map(t => ({ idx: t.idx, name: t.name, ppt: t.ppt, link: t.link, memo: t.memo, pptFile: t.ppt_file, api: secrets.has(t.idx) ? secrets.get(t.idx) : null }));
+  state.people = d.people.sort((a, b) => a.name.localeCompare(b.name, 'ko'));
+  session = d.profile ? { role: d.profile.role, personId: d.profile.person_id } : { role: 'viewer', personId: null };
+}
+
+function isEditing() {
+  const a = document.activeElement;
+  return a && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA') && a.closest('main, aside');
+}
+
+async function refresh(force = false) {
+  try {
+    const data = await fetchAll();
+    const snap = JSON.stringify(data);
+    if (!force && snap === lastSnap) { syncOk(); return; }
+    if (!force && isEditing()) return; // 입력 중엔 덮어쓰지 않음 (다음 주기에 반영)
+    lastSnap = snap;
+    applyData(data);
+    render();
+    syncOk();
+  } catch (e) {
+    $('#uSync').textContent = '동기화 실패';
+    $('#uSync').classList.add('err');
+    console.error(e);
+  }
+}
+function syncOk() {
+  $('#uSync').textContent = '동기화 ' + new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  $('#uSync').classList.remove('err');
+}
+
+/* 버튼류 액션: RPC 실행 후 서버 상태 다시 읽기 */
+async function act(fn, okMsg) {
+  try {
+    const r = await fn();
+    await refresh(true);
+    if (okMsg) toast(typeof okMsg === 'function' ? okMsg(r) : okMsg);
+  } catch (e) {
+    toast('⚠ ' + errMsg(e));
+    refresh(true);
+  }
+}
+/* 텍스트 입력 자동저장(디바운스): 재렌더 없이 조용히 저장. ms=0이면 즉시(blur 시) */
+const debounces = {};
+function debounceSave(key, fn, ms = 600) {
+  clearTimeout(debounces[key]);
+  debounces[key] = setTimeout(async () => {
+    try { await fn(); syncOk(); } catch (e) { toast('⚠ 저장 실패: ' + errMsg(e)); }
+  }, ms);
+}
+
+/* 권한 (UI 표시용 — 실제 강제는 서버 RLS/RPC) */
+const isAdmin = () => session.role === 'admin';
+const me = () => state.people.find(p => p.id === session.personId) || null;
+const myTeam = () => { const p = me(); return p && p.team != null ? p.team : null; };
+const canEditTeam = i => isAdmin() || (session.role === 'member' && myTeam() === i);
+
+/* ---------- 렌더링 ---------- */
+function render() {
+  document.body.dataset.role = session.role;
+  renderChrome();
+  renderNotice();
+  renderRoster();
+  renderBoard();
+}
+
+function renderChrome() {
+  const assigned = state.people.filter(p => p.team != null).length;
+  $('#uStats').textContent = `총 ${state.people.length}명 · 배정 ${assigned} · 미배정 ${state.people.length - assigned}`;
+  const p = me();
+  $('#uRole').textContent =
+    session.role === 'admin' ? '관리자 모드' :
+    session.role === 'member' && p ? `${p.name} · ${p.team != null && state.teams[p.team] ? state.teams[p.team].name : '팀 미배정'}` :
+    '둘러보기 모드';
+  $('#uLogout').hidden = session.role === 'viewer';
+  document.querySelectorAll('.chip-btn').forEach(b => b.classList.toggle('active', b.dataset.r === session.role));
+}
+
+function renderNotice() {
+  const tile = $('#noticeTile');
+  const hasText = !!(state.notice.text || '').trim();
+  tile.style.display = (!hasText && !isAdmin()) ? 'none' : '';
+  const body = $('#noticeBody');
+  body.textContent = hasText ? state.notice.text : '등록된 공지가 없습니다. [공지 수정]으로 작성하세요.';
+  body.classList.toggle('empty', !hasText);
+  $('#noticeMeta').textContent = state.notice.updatedAt ? '마지막 수정 ' + fmtDate(state.notice.updatedAt) : '';
+}
+
+function renderRoster() {
+  $('#teamCount').value = state.teamCount;
+  const list = $('#rosterList');
+  list.replaceChildren();
+  if (!isAdmin()) return;
+  const q = filterText.trim().toLowerCase();
+  for (const p of state.people) {
+    if (q && !(p.name.toLowerCase().includes(q) || (p.dept || '').toLowerCase().includes(q))) continue;
+    const sel = el('select', {
+      title: '특정 팀에 고정',
+      onchange: e => {
+        const v = e.target.value;
+        const upd = v === '' ? { id: p.id, team: p.team, pin: null } : { id: p.id, team: +v, pin: +v };
+        act(() => rpc('apply_assign', { p_assign: [upd] }));
+      },
+    }, el('option', { value: '' }, '자동'),
+       state.teams.map((t, i) => el('option', { value: i }, '📌' + t.name)));
+    sel.value = p.pin == null ? '' : String(p.pin);
+    list.append(el('div', { class: 'person-row' },
+      el('div', { class: 'who' },
+        el('div', { class: 'nm' }, p.name),
+        p.dept ? el('div', { class: 'dp', title: p.dept }, p.dept) : null),
+      el('span', { class: 'tbadge' },
+        p.team != null && state.teams[p.team]
+          ? [el('span', { class: 'dot', style: `background:${teamColor(p.team)}` }), state.teams[p.team].name]
+          : el('span', { style: 'color:var(--stone)' }, '—')),
+      sel,
+      el('button', { class: 'x', title: '명단에서 제거', onclick: () => act(() => rpc('remove_person', { p_id: p.id })) }, '✕'),
+    ));
+  }
+  const un = state.people.filter(p => p.team == null).length;
+  const pins = state.people.filter(p => p.pin != null).length;
+  $('#rosterStats').textContent = `총 ${state.people.length}명 · 미배정 ${un}명` + (pins ? ` · 고정 📌${pins}` : '');
+}
+
+function chipFor(p) {
+  const admin = isAdmin();
+  const chip = el('span', {
+    class: 'pchip' + (p.pin != null ? ' pinned' : ''),
+    draggable: admin ? 'true' : false,
+    title: p.dept || '',
+    ondragstart: e => { e.dataTransfer.setData('text/plain', p.id); e.dataTransfer.effectAllowed = 'move'; },
+  });
+  if (admin) chip.append(el('span', {
+    class: 'pinbtn',
+    title: p.pin != null ? '고정 해제' : '현재 팀에 고정',
+    onclick: () => {
+      if (p.team == null) return;
+      const pin = p.pin == null ? p.team : null;
+      act(() => rpc('apply_assign', { p_assign: [{ id: p.id, team: p.team, pin }] }));
+    },
+  }, '📌'));
+  chip.append(p.name);
+  if (admin && p.team != null) {
+    chip.append(el('span', { class: 'out', title: '미배정으로 보내기', onclick: () => act(() => rpc('apply_assign', { p_assign: [{ id: p.id, team: null, pin: null }] })) }, '×'));
+  }
+  return chip;
+}
+
+function makeDropTarget(node, teamIdx) {
+  node.addEventListener('dragover', e => {
+    if (isAdmin() && [...e.dataTransfer.types].includes('text/plain')) { e.preventDefault(); node.classList.add('dragover'); }
+  });
+  node.addEventListener('dragleave', () => node.classList.remove('dragover'));
+  node.addEventListener('drop', e => {
+    e.preventDefault();
+    node.classList.remove('dragover');
+    if (!isAdmin()) return;
+    const p = state.people.find(x => x.id === e.dataTransfer.getData('text/plain'));
+    if (!p) return;
+    const upd = teamIdx < 0 ? { id: p.id, team: null, pin: null } : { id: p.id, team: teamIdx, pin: teamIdx }; // 수동 배치는 자동 고정
+    act(() => rpc('apply_assign', { p_assign: [upd] }));
+  });
+}
+
+function renderBoard() {
+  const unBox = $('#unassigned .members');
+  unBox.replaceChildren();
+  const un = state.people.filter(p => p.team == null);
+  $('#unCnt').textContent = `${un.length}명`;
+  if (isAdmin()) un.forEach(p => unBox.append(chipFor(p)));
+
+  $('#teamsSub').textContent = `${state.teamCount}팀 · ${state.people.filter(p => p.team != null).length}명 배정`;
+
+  const grid = $('#teamsGrid');
+  grid.replaceChildren();
+  state.teams.forEach((t, i) => {
+    const members = state.people.filter(p => p.team === i);
+    const mine = session.role === 'member' && myTeam() === i;
+
+    const head = el('div', { class: 'team-head' },
+      el('span', { class: 'dot', style: `background:${teamColor(i)}` }),
+      isAdmin()
+        ? el('input', { class: 'tname', value: t.name, onchange: e => act(() => rpc('rename_team', { p_idx: t.idx, p_name: e.target.value })) })
+        : el('span', { class: 'tname' }, t.name),
+      mine ? el('span', { class: 'mytag' }, 'MY TEAM') : null,
+      el('span', { class: 'cnt' }, `${members.length}명`));
+
+    const card = el('div', { class: 'team-card' + (mine ? ' mine' : '') },
+      head,
+      el('div', { class: 'members' }, members.map(chipFor)),
+      teamInfo(t, i));
+    makeDropTarget(card, i);
+    grid.append(card);
+  });
+}
+
+/* 팀 정보 행 — 권한에 따라 입력/보기 전환 (실제 검증은 서버) */
+function teamInfo(t, i) {
+  const edit = canEditTeam(i);
+  const box = el('div', { class: 'tinfo' });
+  const row = (label, ...val) => box.append(el('div', { class: 'irow' }, el('span', { class: 'ilabel' }, label), el('span', { class: 'ival' }, ...val)));
+
+  // API 키: 관리자만 수정, 해당 조 팀원은 열람 (다른 사람에겐 서버가 아예 안 내려줌)
+  if (isAdmin()) {
+    const saveApi = (e, ms) => {
+      const v = e.target.value.trim();
+      debounceSave('api' + t.idx, () => rpc('set_team_api', { p_idx: t.idx, p_api: v }), ms);
+    };
+    row('API 키', el('input', { class: 'pill', value: t.api || '', placeholder: 'sk-...',
+      oninput: e => saveApi(e), onchange: e => saveApi(e, 0) }));
+  } else if (t.api !== null && session.role === 'member' && myTeam() === i) {
+    row('API 키', t.api
+      ? [el('span', { class: 'apival' }, t.api), el('button', { class: 'icon-btn', title: '복사', onclick: () => navigator.clipboard?.writeText(t.api).then(() => toast('API 키를 복사했습니다')) }, '⧉')]
+      : el('span', { class: 'none' }, '관리자가 아직 발급하지 않았습니다'));
+  }
+
+  for (const [key, label] of [['ppt', 'PPT 링크'], ['link', '서비스']]) {
+    if (edit) {
+      const saveField = (e, ms) => {
+        const v = e.target.value.trim();
+        debounceSave(key + t.idx, () => rpc('update_team_field', { p_idx: t.idx, p_field: key, p_value: v }), ms);
+      };
+      row(label, el('input', { class: 'pill', value: t[key] || '', placeholder: 'https://...',
+        oninput: e => saveField(e), onchange: e => saveField(e, 0) }));
+    } else {
+      row(label, /^https?:\/\//.test(t[key] || '')
+        ? el('a', { href: t[key], target: '_blank' }, t[key].replace(/^https?:\/\//, '').slice(0, 40) + (t[key].length > 48 ? '…' : ''))
+        : el('span', { class: 'none' }, t[key] || '—'));
+    }
+  }
+
+  const fileBits = [];
+  if (t.pptFile) {
+    fileBits.push(el('button', { class: 'file-pill', title: '클릭하여 다운로드', onclick: () => downloadPpt(t) },
+      '📎', el('span', { class: 'fname' }, t.pptFile.name), el('span', { class: 'fsize' }, fmtSize(t.pptFile.size))));
+    if (edit) fileBits.push(el('button', { class: 'icon-btn', title: '파일 삭제', onclick: () => deletePpt(t) }, '✕'));
+    if (t.pptFile.by) fileBits.push(el('span', { class: 'file-meta' }, `${t.pptFile.by} · ${fmtDate(t.pptFile.at)}`));
+  } else {
+    fileBits.push(el('span', { class: 'none' }, '—'));
+  }
+  if (edit) fileBits.push(el('button', { class: 'btn sm', onclick: () => { uploadTarget = t.idx; $('#pptInput').click(); } }, t.pptFile ? '교체' : '업로드'));
+  row('PPT 파일', ...fileBits);
+
+  if (edit) {
+    const saveMemo = (e, ms) => {
+      const v = e.target.value;
+      debounceSave('memo' + t.idx, () => rpc('update_team_field', { p_idx: t.idx, p_field: 'memo', p_value: v }), ms);
+    };
+    row('메모', el('textarea', { class: 'pill', rows: 2,
+      oninput: e => saveMemo(e), onchange: e => saveMemo(e, 0) }, t.memo || ''));
+  } else if (t.memo) {
+    row('메모', el('span', {}, t.memo));
+  }
+  return box;
+}
+
+/* ---------- PPT 파일 (Supabase Storage) ---------- */
+async function uploadPpt(idx, file) {
+  if (file.size > MAX_FILE_MB * 1048576) { toast(`⚠ ${MAX_FILE_MB}MB 이하 파일만 업로드할 수 있습니다`); return; }
+  toast('업로드 중…');
+  try {
+    const { error } = await sb.storage.from('ppt').upload(`team-${idx}/file`, file, {
+      upsert: true,
+      contentType: file.type || 'application/octet-stream',
+    });
+    if (error) throw error;
+    await rpc('set_team_file', { p_idx: idx, p_file: { name: file.name, size: file.size } });
+    await refresh(true);
+    toast(`발표파일 업로드 완료 — ${file.name}`);
+  } catch (e) { toast('⚠ 업로드 실패: ' + errMsg(e)); }
+}
+function downloadPpt(t) {
+  const { data } = sb.storage.from('ppt').getPublicUrl(`team-${t.idx}/file`, { download: t.pptFile.name });
+  const url = data.publicUrl + '&v=' + encodeURIComponent(t.pptFile.at || '');
+  el('a', { href: url, download: t.pptFile.name }).click();
+}
+async function deletePpt(t) {
+  if (!confirm('발표파일을 삭제할까요?')) return;
+  try {
+    const { error } = await sb.storage.from('ppt').remove([`team-${t.idx}/file`]);
+    if (error) throw error;
+    await rpc('set_team_file', { p_idx: t.idx, p_file: null });
+    await refresh(true);
+  } catch (e) { toast('⚠ 삭제 실패: ' + errMsg(e)); }
+}
+$('#pptInput').addEventListener('change', e => {
+  const f = e.target.files[0];
+  if (f && uploadTarget != null && canEditTeam(uploadTarget)) uploadPpt(uploadTarget, f);
+  e.target.value = '';
+});
+
+/* ---------- 랜덤 배정 (관리자) ---------- */
+function randomize() {
+  const n = state.teamCount;
+  const assign = state.people.map(p => ({ id: p.id, team: p.pin != null ? p.pin : null, pin: p.pin }));
+  const counts = Array(n).fill(0);
+  assign.forEach(a => { if (a.team != null) counts[a.team]++; });
+  const pool = assign.filter(a => a.team == null);
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+  for (const a of pool) {
+    const min = Math.min(...counts);
+    const cands = counts.flatMap((c, k) => c === min ? [k] : []);
+    a.team = cands[Math.floor(Math.random() * cands.length)];
+    counts[a.team]++;
+  }
+  act(() => rpc('apply_assign', { p_assign: assign }),
+      `랜덤 배정 완료 — ${pool.length}명 배정, 고정 ${assign.length - pool.length}명 유지`);
+}
+
+/* ---------- 명단 파싱 (xlsx / csv / 붙여넣기) ---------- */
+async function readZipEntries(u8) {
+  const dv = new DataView(u8.buffer, u8.byteOffset, u8.byteLength);
+  let eocd = -1;
+  for (let i = u8.length - 22; i >= Math.max(0, u8.length - 22 - 65557); i--) {
+    if (dv.getUint32(i, true) === 0x06054b50) { eocd = i; break; }
+  }
+  if (eocd < 0) throw new Error('올바른 xlsx(zip) 파일이 아닙니다');
+  const count = dv.getUint16(eocd + 10, true);
+  let off = dv.getUint32(eocd + 16, true);
+  const dec = new TextDecoder();
+  const out = new Map();
+  for (let i = 0; i < count; i++) {
+    if (dv.getUint32(off, true) !== 0x02014b50) break;
+    const method = dv.getUint16(off + 10, true);
+    const csize = dv.getUint32(off + 20, true);
+    const nlen = dv.getUint16(off + 28, true);
+    const elen = dv.getUint16(off + 30, true);
+    const clen = dv.getUint16(off + 32, true);
+    const lho = dv.getUint32(off + 42, true);
+    const name = dec.decode(u8.subarray(off + 46, off + 46 + nlen));
+    off += 46 + nlen + elen + clen;
+    if (!/sharedStrings\.xml$|worksheets\/sheet\d+\.xml$/.test(name)) continue;
+    const lnlen = dv.getUint16(lho + 26, true);
+    const lelen = dv.getUint16(lho + 28, true);
+    const start = lho + 30 + lnlen + lelen;
+    const comp = u8.subarray(start, start + csize);
+    if (method === 0) out.set(name, comp);
+    else {
+      const stream = new Blob([comp]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
+      out.set(name, new Uint8Array(await new Response(stream).arrayBuffer()));
+    }
+  }
+  return out;
+}
+
+async function parseXlsx(buf) {
+  const entries = await readZipEntries(new Uint8Array(buf));
+  const dec = new TextDecoder();
+  const parser = new DOMParser();
+  const shared = [];
+  if (entries.has('xl/sharedStrings.xml')) {
+    const doc = parser.parseFromString(dec.decode(entries.get('xl/sharedStrings.xml')), 'application/xml');
+    for (const si of doc.getElementsByTagName('si')) {
+      shared.push([...si.getElementsByTagName('t')].map(t => t.textContent).join(''));
+    }
+  }
+  const sheetName = [...entries.keys()].filter(n => n.startsWith('xl/worksheets/')).sort()[0];
+  if (!sheetName) throw new Error('시트를 찾을 수 없습니다');
+  const doc = parser.parseFromString(dec.decode(entries.get(sheetName)), 'application/xml');
+  const rows = [];
+  for (const row of doc.getElementsByTagName('row')) {
+    const cells = [];
+    for (const c of row.getElementsByTagName('c')) {
+      let col = 0;
+      for (const ch of (c.getAttribute('r') || '')) {
+        const code = ch.charCodeAt(0);
+        if (code >= 65 && code <= 90) col = col * 26 + code - 64; else break;
+      }
+      col = col > 0 ? col - 1 : cells.length;
+      let val = '';
+      if (c.getAttribute('t') === 'inlineStr') val = c.textContent;
+      else {
+        const v = c.getElementsByTagName('v')[0];
+        val = v ? v.textContent : '';
+        if (c.getAttribute('t') === 's' && val !== '') val = shared[+val] ?? '';
+      }
+      cells[col] = String(val).trim();
+    }
+    rows.push(Array.from(cells, x => x ?? ''));
+  }
+  return rows;
+}
+
+function parseDelimited(text) {
+  return text.split(/\r?\n/).map(line => line.split(/\t|,/).map(c => c.trim()));
+}
+
+function extractPeople(rows) {
+  const clean = rows.filter(r => r.some(c => c));
+  if (!clean.length) return [];
+  const header = clean[0].map(c => String(c || ''));
+  let nameCol = header.findIndex(h => /성명|이름|name/i.test(h));
+  let deptCol = header.findIndex(h => /소속|학과|전공|부서/i.test(h));
+  let dataRows;
+  if (nameCol >= 0) dataRows = clean.slice(1);
+  else {
+    const width = Math.max(...clean.map(r => r.length));
+    let best = 0, bestScore = -1;
+    for (let c = 0; c < width; c++) {
+      const score = clean.filter(r => /^[가-힣]{2,4}$/.test(r[c] || '')).length;
+      if (score > bestScore) { bestScore = score; best = c; }
+    }
+    nameCol = best; deptCol = -1;
+    dataRows = /연번|번호|no\.?|이메일|캠퍼스/i.test(header.join(' ')) ? clean.slice(1) : clean;
+  }
+  const seen = new Map();
+  const out = [];
+  for (const r of dataRows) {
+    let name = (r[nameCol] || '').trim();
+    if (!name) continue;
+    const k = seen.get(name) || 0;
+    seen.set(name, k + 1);
+    if (k > 0) name = `${name}(${k + 1})`;
+    out.push({ name, dept: deptCol >= 0 ? (r[deptCol] || '').trim() : '' });
+  }
+  return out;
+}
+
+async function handleFile(file) {
+  try {
+    let people;
+    if (/\.(xlsx|xls)$/i.test(file.name)) people = extractPeople(await parseXlsx(await file.arrayBuffer()));
+    else people = extractPeople(parseDelimited(await file.text()));
+    await act(() => rpc('merge_roster', { p_people: people }),
+      r => `명단 갱신 완료 — 유지 ${r.kept}명 · 추가 ${r.added}명 · 제거 ${r.removed}명`);
+  } catch (err) { toast('⚠ 파일을 읽지 못했습니다: ' + errMsg(err)); }
+}
+
+/* ---------- 내보내기 (관리자) ---------- */
+const csvEsc = s => { s = String(s ?? ''); return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+function downloadCsv() {
+  const rows = [['팀', '이름', '소속', 'API 키', 'PPT 링크', '서비스 링크', '발표파일', '메모']];
+  state.teams.forEach((t, i) => {
+    for (const p of state.people.filter(p => p.team === i)) {
+      rows.push([t.name, p.name, p.dept, t.api || '', t.ppt, t.link, t.pptFile ? t.pptFile.name : '', t.memo]);
+    }
+  });
+  for (const p of state.people.filter(p => p.team == null)) {
+    rows.push(['미배정', p.name, p.dept, '', '', '', '', '']);
+  }
+  const csv = '﻿' + rows.map(r => r.map(csvEsc).join(',')).join('\r\n');
+  const a = el('a', {
+    href: URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' })),
+    download: `팀배정_${new Date().toISOString().slice(0, 10)}.csv`,
+  });
+  a.click();
+  URL.revokeObjectURL(a.href);
+  toast('CSV 다운로드 완료 (엑셀에서 열립니다)');
+}
+
+function copySummary() {
+  const lines = [`🎯 부트캠프 팀 배정 (${new Date().toLocaleDateString('ko-KR')})`, ''];
+  if ((state.notice.text || '').trim()) lines.push('📢 공지: ' + state.notice.text.trim(), '');
+  state.teams.forEach((t, i) => {
+    const ms = state.people.filter(p => p.team === i);
+    lines.push(`■ ${t.name} (${ms.length}명)`);
+    lines.push('  ' + (ms.map(p => p.name).join(', ') || '-'));
+    if (t.api) lines.push('  API 키: ' + t.api);
+    if (t.ppt) lines.push('  PPT: ' + t.ppt);
+    if (t.link) lines.push('  서비스: ' + t.link);
+    if (t.pptFile) lines.push('  발표파일: ' + t.pptFile.name);
+    if (t.memo) lines.push('  메모: ' + t.memo);
+    lines.push('');
+  });
+  const un = state.people.filter(p => p.team == null);
+  if (un.length) lines.push(`⏳ 미배정 (${un.length}명): ` + un.map(p => p.name).join(', '));
+  const text = lines.join('\n');
+  (navigator.clipboard?.writeText(text) || Promise.reject()).then(
+    () => toast('클립보드에 복사했습니다'),
+    () => {
+      const ta = el('textarea', {}, text);
+      document.body.append(ta); ta.select();
+      document.execCommand('copy'); ta.remove();
+      toast('클립보드에 복사했습니다');
+    });
+}
+
+/* ---------- 역할 전환 ---------- */
+let authMode = 'login'; // login | setup | change
+function openAuth(mode) {
+  if (authError) { toast('⚠ ' + authError); return; }
+  authMode = mode;
+  $('#authTitle').textContent = mode === 'change' ? 'Password' : 'Admin';
+  $('#authDesc').textContent =
+    mode === 'setup' ? '처음입니다. 관리자 비밀번호를 만들어 주세요 (4자 이상). 이 비밀번호가 곧 관리자 계정이 됩니다.' :
+    mode === 'change' ? '비밀번호를 변경합니다.' : '관리자 비밀번호를 입력하세요.';
+  $('#fCur').hidden = mode !== 'change';
+  $('#fPw2').hidden = mode === 'login';
+  $('#pw1').placeholder = mode === 'login' ? '비밀번호' : '새 비밀번호';
+  $('#pwCur').value = $('#pw1').value = $('#pw2').value = '';
+  $('#authErr').textContent = '';
+  $('#dlgAuth').showModal();
+  (mode === 'change' ? $('#pwCur') : $('#pw1')).focus();
+}
+async function authSubmit() {
+  const err = $('#authErr');
+  const pw1 = $('#pw1').value;
+  try {
+    if (authMode === 'change') {
+      if (pw1 !== $('#pw2').value) { err.textContent = '비밀번호 확인이 일치하지 않습니다.'; return; }
+      await rpc('change_admin_password', { p_old: $('#pwCur').value, p_new: pw1 });
+    } else {
+      if (authMode === 'setup' && pw1 !== $('#pw2').value) { err.textContent = '비밀번호 확인이 일치하지 않습니다.'; return; }
+      await rpc('admin_login', { p_password: pw1 });
+    }
+    $('#dlgAuth').close();
+    await refresh(true);
+    toast(authMode === 'setup' ? '비밀번호가 설정되었습니다. 관리자 모드입니다.' :
+          authMode === 'change' ? '비밀번호가 변경되었습니다.' : '관리자 모드로 전환했습니다.');
+  } catch (e) { err.textContent = errMsg(e); }
+}
+
+function openMember() {
+  if (authError) { toast('⚠ ' + authError); return; }
+  $('#nameList').replaceChildren(...state.people.map(p => el('option', { value: p.name })));
+  $('#fCode').hidden = !state.accessCodeRequired;
+  $('#memberName').value = $('#memberCode').value = '';
+  $('#memberErr').textContent = '';
+  $('#dlgMember').showModal();
+  $('#memberName').focus();
+}
+async function memberSubmit() {
+  const err = $('#memberErr');
+  try {
+    await rpc('member_login', { p_name: $('#memberName').value.trim(), p_code: $('#memberCode').value || null });
+    $('#dlgMember').close();
+    await refresh(true);
+    const p = me();
+    toast(p ? `${p.name}님, ${state.teams[p.team]?.name || ''} 팀원 모드입니다.` : '팀원 모드입니다.');
+  } catch (e) { err.textContent = errMsg(e); }
+}
+
+/* ---------- 이벤트 ---------- */
+document.querySelectorAll('.chip-btn').forEach(b => b.addEventListener('click', () => {
+  const r = b.dataset.r;
+  if (r === session.role) return;
+  if (r === 'viewer') act(() => rpc('logout'));
+  else if (r === 'member') openMember();
+  else openAuth(state.adminSet ? 'login' : 'setup');
+}));
+$('#uLogout').addEventListener('click', () => act(() => rpc('logout')));
+$('#uChangePw').addEventListener('click', () => openAuth('change'));
+$('#authOk').addEventListener('click', authSubmit);
+$('#authCancel').addEventListener('click', () => $('#dlgAuth').close());
+$('#dlgAuth').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); authSubmit(); } });
+$('#memberOk').addEventListener('click', memberSubmit);
+$('#memberCancel').addEventListener('click', () => $('#dlgMember').close());
+$('#dlgMember').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); memberSubmit(); } });
+
+$('#noticeEditBtn').addEventListener('click', () => {
+  $('#noticeInput').value = state.notice.text;
+  $('#noticeView').hidden = true;
+  $('#noticeEdit').hidden = false;
+  $('#noticeEditBtn').hidden = true;
+  $('#noticeInput').focus();
+});
+function closeNoticeEdit() {
+  $('#noticeView').hidden = false;
+  $('#noticeEdit').hidden = true;
+  $('#noticeEditBtn').hidden = false;
+}
+$('#noticeCancel').addEventListener('click', closeNoticeEdit);
+$('#noticeSave').addEventListener('click', () => {
+  const text = $('#noticeInput').value.trim();
+  closeNoticeEdit();
+  act(() => rpc('set_notice', { p_text: text }), '공지를 저장했습니다');
+});
+
+$('#btnRandom').addEventListener('click', randomize);
+$('#btnReset').addEventListener('click', () => {
+  if (!confirm('모든 배정과 고정(📌)을 해제할까요? (명단·팀 정보는 유지)')) return;
+  act(() => rpc('reset_assign'));
+});
+$('#teamCount').addEventListener('change', e => {
+  const n = Math.max(1, Math.min(15, +e.target.value || 1));
+  act(() => rpc('set_team_count', { p_n: n }));
+});
+$('#btnCsv').addEventListener('click', downloadCsv);
+$('#btnCopy').addEventListener('click', copySummary);
+$('#btnCode').addEventListener('click', () => {
+  const cur = state.accessCodeRequired ? ' (현재: 설정됨)' : ' (현재: 없음)';
+  const code = prompt('팀원 로그인용 참여코드' + cur + '\n설정할 코드를 입력하세요. 비워두면 해제됩니다.');
+  if (code === null) return;
+  act(() => rpc('set_access_code', { p_code: code.trim() }),
+      code.trim() ? '참여코드가 설정되었습니다. 학생들에게 공유하세요.' : '참여코드를 해제했습니다.');
+});
+
+const dz = $('#dropzone');
+dz.addEventListener('click', () => $('#fileInput').click());
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('over'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('over'));
+dz.addEventListener('drop', e => {
+  e.preventDefault();
+  dz.classList.remove('over');
+  if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+});
+$('#fileInput').addEventListener('change', e => {
+  if (e.target.files[0]) handleFile(e.target.files[0]);
+  e.target.value = '';
+});
+$('#btnPaste').addEventListener('click', () => {
+  const ta = $('#pasteArea'), btn = $('#btnApplyPaste');
+  const show = ta.style.display !== 'block';
+  ta.style.display = show ? 'block' : 'none';
+  btn.style.display = show ? 'block' : 'none';
+  if (show) ta.focus();
+});
+$('#btnApplyPaste').addEventListener('click', () => {
+  const people = extractPeople(parseDelimited($('#pasteArea').value));
+  $('#pasteArea').value = '';
+  act(() => rpc('merge_roster', { p_people: people }),
+      r => `명단 갱신 완료 — 유지 ${r.kept}명 · 추가 ${r.added}명 · 제거 ${r.removed}명`);
+});
+$('#btnAdd').addEventListener('click', addPerson);
+$('#newName').addEventListener('keydown', e => { if (e.key === 'Enter') addPerson(); });
+function addPerson() {
+  const name = $('#newName').value.trim();
+  if (!name) return;
+  $('#newName').value = '';
+  act(() => rpc('add_person', { p_name: name }));
+}
+$('#btnClearAll').addEventListener('click', () => {
+  if (!confirm('명단을 전부 삭제할까요?')) return;
+  act(() => rpc('clear_people'));
+});
+$('#filter').addEventListener('input', e => { filterText = e.target.value; renderRoster(); });
+
+makeDropTarget($('#unassigned'), -1);
+document.body.addEventListener('focusout', () => setTimeout(() => { if (!isEditing()) refresh(); }, 100));
+
+/* ---------- 부팅 ---------- */
+(async function boot() {
+  if (!CONFIG.SUPABASE_URL || !CONFIG.SUPABASE_ANON_KEY) {
+    $('#setup').style.display = 'flex';
+    return;
+  }
+  sb = supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
+  try { await ensureAuth(); } catch (e) { console.warn(e); }
+  await refresh(true);
+  setInterval(() => { if (!document.hidden) refresh(); }, 10000);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) refresh(); });
+})();
+</script>
+</body>
+</html>
