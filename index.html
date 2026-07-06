@@ -2,7 +2,8 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#111111">
 <title>BOOTCAMP TEAM BOARD</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎯</text></svg>">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
@@ -244,6 +245,34 @@
     .primary-nav { height: auto; padding: 10px 16px; flex-wrap: wrap; gap: 10px; }
     main { padding: 16px 16px 0; }
     .section-head { margin-top: 32px; }
+  }
+
+  /* 모바일(폰) — 학생들이 팀 확인·링크 등록·공지 열람하는 주 화면 */
+  @media (max-width: 640px) {
+    .utility-bar { height: auto; min-height: 36px; flex-wrap: wrap; padding: 6px 14px; row-gap: 2px; }
+    .primary-nav { padding: 10px 14px; }
+    .wordmark { font-size: 18px; }
+    .role-chips { gap: 6px; margin-left: 0; }
+    .chip-btn { height: 38px; padding: 6px 13px; font-size: 13px; }
+    main { padding: 12px 12px 0; }
+    .notice { padding: 24px 20px 22px; }
+    .notice .kicker { font-size: 34px; margin-bottom: 12px; }
+    .notice .body { font-size: 15px; }
+    .notice .edit-btn { position: static; margin-top: 14px; }
+    .section-head { font-size: 20px; margin: 28px 0 10px; }
+    #teamsGrid { grid-template-columns: 1fr; }
+    .team-head { padding: 14px 14px 8px; }
+    .team-card .members { padding: 0 14px 12px; }
+    .tinfo .irow { padding: 10px 12px; }
+    .tinfo .ilabel { width: 60px; font-size: 11px; }
+    .file-pill .fname { max-width: 38vw; }
+    .btn { height: 42px; padding: 0 18px; }
+    dialog { padding: 24px 20px; width: 92vw; }
+    footer.fine { padding: 20px 0 32px; }
+    /* iOS는 16px 미만 입력칸에 포커스하면 화면을 강제 확대함 — 방지 */
+    input.pill, select.pill, textarea.pill,
+    .tinfo input.pill, .tinfo textarea.pill,
+    .count-pill input, .notice textarea, dialog .field input { font-size: 16px; }
   }
 </style>
 </head>
