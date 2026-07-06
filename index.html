@@ -423,6 +423,16 @@
   </div>
 </dialog>
 
+<dialog id="dlgConfirm">
+  <h2 id="cfTitle">확인</h2>
+  <div class="desc" id="cfDesc"></div>
+  <div class="field" id="cfField" hidden><input id="cfInput" class="pill"></div>
+  <div class="actions">
+    <button class="btn sm" id="cfCancel">취소</button>
+    <button class="btn sm primary" id="cfOk">확인</button>
+  </div>
+</dialog>
+
 <input type="file" id="pptInput" hidden accept=".ppt,.pptx,.pdf,.key,.zip,.pptm">
 <div id="toast"></div>
 
@@ -468,6 +478,34 @@ function toast(msg) {
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => t.classList.remove('show'), 2800);
 }
+/* 브라우저 confirm/prompt 대체 다이얼로그 — 화면을 멈추지 않고, Chrome의 대화상자 차단에도 안전 */
+let askResolve = null;
+function ask({ title = '확인', desc = '', input = null, ok = '확인' }) {
+  $('#cfTitle').textContent = title;
+  $('#cfDesc').textContent = desc;
+  $('#cfField').hidden = input == null;
+  if (input != null) {
+    $('#cfInput').value = input.value || '';
+    $('#cfInput').placeholder = input.placeholder || '';
+  }
+  $('#cfOk').textContent = ok;
+  return new Promise(res => {
+    askResolve = res;
+    $('#dlgConfirm').showModal();
+    if (input != null) $('#cfInput').focus();
+  });
+}
+function askDone(v) {
+  if ($('#dlgConfirm').open) $('#dlgConfirm').close();
+  if (askResolve) { askResolve(v); askResolve = null; }
+}
+$('#cfOk').addEventListener('click', () => askDone($('#cfField').hidden ? true : $('#cfInput').value));
+$('#cfCancel').addEventListener('click', () => askDone(null));
+$('#dlgConfirm').addEventListener('cancel', () => askDone(null));
+$('#dlgConfirm').addEventListener('keydown', e => {
+  if (e.key === 'Enter') { e.preventDefault(); $('#cfOk').click(); }
+});
+
 const fmtSize = b => b >= 1048576 ? (b / 1048576).toFixed(1) + 'MB' : Math.max(1, Math.round(b / 1024)) + 'KB';
 const fmtDate = iso => iso ? new Date(iso).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
 const teamColor = i => `hsl(${(i * 137.5) % 360} 62% 52%)`;
@@ -478,7 +516,7 @@ const ERR_MAP = {
   BAD_CODE: '참여코드가 올바르지 않습니다.',
   NO_NAME: '명단에 없는 이름입니다.',
   NO_TEAM: '아직 팀이 배정되지 않았습니다. 관리자에게 문의하세요.',
-  NOT_ADMIN: '관리자 권한이 필요합니다.',
+  NOT_ADMIN: '관리자 권한이 필요합니다 — 우측 상단에서 관리자로 다시 로그인해 주세요.',
   NOT_ALLOWED: '이 항목을 수정할 권한이 없습니다.',
   NOT_AUTHENTICATED: '연결 세션이 없습니다. 새로고침 후 다시 시도하세요.',
   EMPTY_ROSTER: '명단에서 이름을 찾지 못했습니다.',
@@ -814,7 +852,7 @@ function downloadPpt(t) {
   el('a', { href: url, download: t.pptFile.name }).click();
 }
 async function deletePpt(t) {
-  if (!confirm('발표파일을 삭제할까요?')) return;
+  if (!await ask({ title: '파일 삭제', desc: `발표파일(${t.pptFile?.name || ''})을 삭제할까요?`, ok: '삭제' })) return;
   try {
     const { error } = await sb.storage.from('ppt').remove([`team-${t.idx}/file`]);
     if (error) throw error;
@@ -1109,9 +1147,9 @@ $('#noticeSave').addEventListener('click', () => {
 });
 
 $('#btnRandom').addEventListener('click', randomize);
-$('#btnReset').addEventListener('click', () => {
-  if (!confirm('모든 배정과 고정(📌)을 해제할까요? (명단·팀 정보는 유지)')) return;
-  act(() => rpc('reset_assign'));
+$('#btnReset').addEventListener('click', async () => {
+  if (!await ask({ title: '배정 초기화', desc: '모든 배정과 고정(📌)을 해제할까요? 명단·팀 정보는 유지됩니다.', ok: '초기화' })) return;
+  act(() => rpc('reset_assign'), '배정을 초기화했습니다');
 });
 $('#teamCount').addEventListener('change', e => {
   const n = Math.max(1, Math.min(15, +e.target.value || 1));
@@ -1119,9 +1157,13 @@ $('#teamCount').addEventListener('change', e => {
 });
 $('#btnCsv').addEventListener('click', downloadCsv);
 $('#btnCopy').addEventListener('click', copySummary);
-$('#btnCode').addEventListener('click', () => {
-  const cur = state.accessCodeRequired ? ' (현재: 설정됨)' : ' (현재: 없음)';
-  const code = prompt('팀원 로그인용 참여코드' + cur + '\n설정할 코드를 입력하세요. 비워두면 해제됩니다.');
+$('#btnCode').addEventListener('click', async () => {
+  const code = await ask({
+    title: '참여코드',
+    desc: `팀원 로그인에 필요한 코드입니다. 현재: ${state.accessCodeRequired ? '설정됨' : '없음'} — 비워두고 저장하면 해제됩니다.`,
+    input: { placeholder: '예: skku2026' },
+    ok: '저장',
+  });
   if (code === null) return;
   act(() => rpc('set_access_code', { p_code: code.trim() }),
       code.trim() ? '참여코드가 설정되었습니다. 학생들에게 공유하세요.' : '참여코드를 해제했습니다.');
@@ -1161,9 +1203,9 @@ function addPerson() {
   $('#newName').value = '';
   act(() => rpc('add_person', { p_name: name }));
 }
-$('#btnClearAll').addEventListener('click', () => {
-  if (!confirm('명단을 전부 삭제할까요?')) return;
-  act(() => rpc('clear_people'));
+$('#btnClearAll').addEventListener('click', async () => {
+  if (!await ask({ title: '명단 삭제', desc: '명단을 전부 삭제할까요? 되돌릴 수 없습니다.', ok: '전부 삭제' })) return;
+  act(() => rpc('clear_people'), '명단을 삭제했습니다');
 });
 $('#filter').addEventListener('input', e => { filterText = e.target.value; renderRoster(); });
 
