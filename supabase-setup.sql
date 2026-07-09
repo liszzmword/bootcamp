@@ -614,6 +614,15 @@ begin
     and (evaluator_person = a.o_person or evaluator_uid = a.o_uid);
 end $$;
 
+-- 주관식 피드백은 같은 세션 누구나 열람 가능 (점수·작성자는 계속 비공개)
+-- security definer 뷰: evaluations의 RLS를 우회하되 comment만, 본인 세션 것만 노출
+drop view if exists public.team_feedback;
+create view public.team_feedback with (security_barrier) as
+  select session_id, to_team, comment, updated_at
+  from public.evaluations
+  where trim(comment) <> '' and session_id = public.my_session();
+grant select on public.team_feedback to anon, authenticated;
+
 -- ---------------- Storage (PPT 파일) ----------------
 insert into storage.buckets (id, name, public) values ('ppt', 'ppt', true)
 on conflict (id) do nothing;

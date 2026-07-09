@@ -302,6 +302,13 @@
   #qrCode { font-family: var(--font-display); font-size: 28px; font-weight: 700; letter-spacing: 2px; text-align: center; margin: 4px 0 8px; }
   #qrLink { font-size: 11px; color: var(--mute); word-break: break-all; margin-bottom: 8px; }
 
+  /* 공개 피드백 (팀 카드 안, 익명) */
+  .fb-list { display: flex; flex-direction: column; gap: 6px; width: 100%; max-height: 180px; overflow-y: auto; }
+  .fb-item {
+    background: var(--cloud); border-radius: 12px; padding: 8px 12px;
+    font-size: 12.5px; line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere;
+  }
+
   /* 평가 결과 (관리자 섹션) */
   #evalResults { padding-bottom: 8px; }
   .eval-team { border: 1px solid var(--hairline-soft); padding: 14px 16px; margin-bottom: 8px; }
@@ -465,7 +472,7 @@
         <button class="btn" id="btnEvalOpen"></button>
         <button class="btn" id="btnEvalCsv">평가 CSV</button>
       </div>
-      <div class="hint">점수(1~10)는 [평가 열기]를 누른 동안에만 팀원이 입력할 수 있습니다. 주관식 피드백은 언제든 제출 가능하며, 결과는 관리자만 볼 수 있습니다. 관리자는 항상 평가할 수 있습니다.</div>
+      <div class="hint">점수(1~10)는 [평가 열기]를 누른 동안에만 팀원이 입력할 수 있고 결과는 관리자만 봅니다. 주관식 피드백은 언제든 제출 가능하며 해당 팀 카드에 익명으로 공개됩니다. 관리자는 항상 평가할 수 있습니다.</div>
       <div id="evalResults"></div>
     </div>
 
@@ -478,7 +485,7 @@
 
     <footer class="fine">
       데이터는 Supabase에 저장되어 같은 교육 세션 접속자에게 실시간 공유됩니다. 팀원은 본인 조의 링크·파일만 수정할 수 있으며 권한은 서버에서 검증됩니다.<br>
-      평가 점수와 피드백은 관리자만 볼 수 있습니다. 참여코드는 수강생에게만 공유하세요. © 2026 BOOTCAMP TEAM BOARD
+      평가 점수는 관리자만 볼 수 있고, 주관식 피드백은 익명으로 모두에게 공개됩니다. 참여코드는 수강생에게만 공유하세요. © 2026 BOOTCAMP TEAM BOARD
     </footer>
   </main>
 </div>
@@ -510,7 +517,7 @@
 
 <dialog id="dlgFeedback">
   <h2 id="fbTitle">피드백</h2>
-  <div class="desc">주관식 피드백은 관리자만 볼 수 있습니다. 비워서 저장하면 삭제됩니다.</div>
+  <div class="desc">피드백은 <b>익명으로 팀 카드에 공개</b>되어 세션에 입장한 누구나 볼 수 있습니다 (점수는 관리자만). 비워서 저장하면 삭제됩니다.</div>
   <textarea id="fbText" class="pill" rows="5" style="width:100%" placeholder="이 팀에게 전할 피드백을 적어주세요"></textarea>
   <div class="err" id="fbErr"></div>
   <div class="actions">
@@ -581,6 +588,7 @@ let state = {
   teamCount: 0, people: [], teams: [],
   notice: { text: '', updatedAt: null },
   evals: [], myEvals: new Map(),          // myEvals: to_team → 내가 제출한 평가
+  feedback: [],                           // 공개 피드백 (익명, 세션 내 전체 열람)
   adminSet: false,
 };
 let session = { role: 'viewer', personId: null, sessionId: null };
@@ -700,7 +708,7 @@ async function rpc(fn, args) {
 }
 
 async function fetchAll() {
-  const [se, pe, te, sec, st, pr, ev] = await Promise.all([
+  const [se, pe, te, sec, st, pr, ev, fb] = await Promise.all([
     sb.from('sessions').select('*').order('created_at', { ascending: false }),
     sb.from('people').select('id,session_id,name,dept,team,pin'),
     sb.from('teams').select('session_id,idx,name,ppt,link,memo,ppt_file').order('idx'),
@@ -708,9 +716,10 @@ async function fetchAll() {
     sb.from('settings').select('*').eq('id', 1).single(),
     sb.from('profiles').select('role,person_id,session_id').maybeSingle(),
     sb.from('evaluations').select('*'),
+    sb.from('team_feedback').select('session_id,to_team,comment,updated_at').order('updated_at', { ascending: false }),
   ]);
-  for (const r of [se, pe, te, sec, st, pr, ev]) if (r.error) throw r.error;
-  return { sessions: se.data, people: pe.data, teams: te.data, secrets: sec.data, settings: st.data, profile: pr.data, evals: ev.data };
+  for (const r of [se, pe, te, sec, st, pr, ev, fb]) if (r.error) throw r.error;
+  return { sessions: se.data, people: pe.data, teams: te.data, secrets: sec.data, settings: st.data, profile: pr.data, evals: ev.data, feedback: fb.data };
 }
 
 function applyData(d) {
@@ -730,6 +739,7 @@ function applyData(d) {
     .map(t => ({ idx: t.idx, name: t.name, ppt: t.ppt, link: t.link, memo: t.memo, pptFile: t.ppt_file, api: secrets.has(t.idx) ? secrets.get(t.idx) : null }));
   state.people = d.people.filter(p => p.session_id === sid).sort((a, b) => a.name.localeCompare(b.name, 'ko'));
   state.evals = d.evals.filter(e => e.session_id === sid);
+  state.feedback = d.feedback.filter(f => f.session_id === sid);
   state.myEvals = new Map(state.evals
     .filter(e => session.role === 'admin' ? e.evaluator_uid === myUid : (e.evaluator_person && e.evaluator_person === session.personId))
     .map(e => [e.to_team, e]));
@@ -1027,7 +1037,14 @@ function teamInfo(t, i) {
     row('메모', el('span', { class: 'memo-view' }, t.memo));
   }
 
-  // 평가: 팀원은 다른 팀만, 관리자는 모든 팀. 결과는 관리자만 열람 (서버 RLS 강제)
+  // 공개 피드백: 이 팀이 받은 주관식 피드백 (익명) — 세션 안 누구나 볼 수 있음
+  const fbs = state.feedback.filter(f => f.to_team === i);
+  if (fbs.length) {
+    row(`피드백 ${fbs.length}`, el('div', { class: 'fb-list' },
+      fbs.map(f => el('div', { class: 'fb-item' }, f.comment))));
+  }
+
+  // 평가: 팀원은 다른 팀만, 관리자는 모든 팀. 점수는 관리자만 열람 (서버 RLS 강제)
   // 점수는 선택 즉시 제출, 주관식 피드백은 팝업에서 작성
   const canEval = state.session && (isAdmin() || (session.role === 'member' && myTeam() != null && myTeam() !== i));
   if (canEval) {
@@ -1080,7 +1097,7 @@ $('#fbSave').addEventListener('click', async () => {
     const comment = $('#fbText').value.trim();
     await rpc('submit_eval_comment', { p_to_team: feedbackTarget, p_comment: comment });
     $('#dlgFeedback').close();
-    toast(comment ? '피드백을 제출했습니다 — 관리자만 볼 수 있어요' : '피드백을 삭제했습니다');
+    toast(comment ? '피드백을 제출했습니다 — 해당 팀 카드에 익명으로 공개됩니다' : '피드백을 삭제했습니다');
     await refresh(true);
   } catch (e) {
     $('#fbErr').textContent = errMsg(e);
