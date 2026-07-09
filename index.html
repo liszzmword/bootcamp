@@ -220,12 +220,19 @@
   .tinfo .ival > a, .tinfo .apival { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; min-width: 0; }
   .tinfo .memo-view { min-width: 0; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .tinfo input.pill { height: 34px; font-size: 13px; flex: 1 1 140px; width: auto; min-width: 0; padding: 5px 14px; }
-  .tinfo textarea.pill { font-size: 13px; width: 100%; }
+  .tinfo textarea.pill { font-size: 13px; flex: 1 1 140px; width: auto; min-width: 0; }
   .save-btn { flex-shrink: 0; width: 88px; padding: 0; }  /* 상태('저장'→'저장 중…'→'저장됨')가 바뀌어도 폭 고정 — 줄바꿈 방지 */
   .save-btn:disabled { background: var(--cloud); color: var(--stone); }
   .save-btn.saved, .save-btn.saved:disabled { background: none; color: var(--success); opacity: 1; }
   .pchip .pinbtn { display: inline-flex; }
-  .tinfo .irow:has(textarea) .save-btn { margin-left: auto; }
+  /* 메모 확대 팝업 */
+  #dlgMemo { width: 480px; }
+  .memo-full {
+    white-space: pre-wrap; overflow-wrap: anywhere; max-height: 55vh; overflow-y: auto;
+    font-size: 14px; line-height: 1.65; background: var(--cloud); border-radius: 12px;
+    padding: 14px 16px; margin-bottom: 8px;
+  }
+  .memo-click { cursor: zoom-in; }
   .tinfo a { color: var(--ink); font-weight: 500; text-decoration: underline; text-underline-offset: 3px; }
   .tinfo .none { color: var(--stone); }
   .tinfo .apival { font-family: ui-monospace, Menlo, monospace; font-size: 12px; word-break: break-all; }
@@ -552,6 +559,14 @@
   </div>
 </dialog>
 
+<dialog id="dlgMemo">
+  <h2 id="memoTitle">메모</h2>
+  <div class="memo-full" id="memoBody"></div>
+  <div class="actions">
+    <button class="btn sm primary" id="memoClose">닫기</button>
+  </div>
+</dialog>
+
 <dialog id="dlgScores">
   <h2 id="scTitle">평가 상세</h2>
   <div class="desc" id="scSummary"></div>
@@ -677,6 +692,7 @@ const ICONS = {
   open: '<path d="M7 17 17 7"/><path d="M8 7h9v9"/>',
   file: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/>',
   check: '<path d="M20 6 9 17l-5-5"/>',
+  expand: '<path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/>',
 };
 function icon(name, size = 14) {
   const s = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
@@ -1146,10 +1162,12 @@ function teamInfo(t, i) {
 
   if (edit) {
     const ta = el('textarea', { class: 'pill', rows: 2 }, t.memo || '');
-    row('메모', ta, makeSave(ta, async v => { await rpc('update_team_field', { p_idx: t.idx, p_field: 'memo', p_value: v }); t.memo = v; }));
+    row('메모', ta,
+      el('button', { class: 'icon-btn', title: '크게 보기', onclick: () => openMemo(t.name, ta.value) }, icon('expand', 13)),
+      makeSave(ta, async v => { await rpc('update_team_field', { p_idx: t.idx, p_field: 'memo', p_value: v }); t.memo = v; }));
   } else {
     row('메모', t.memo
-      ? el('span', { class: 'memo-view', title: t.memo }, t.memo)
+      ? el('span', { class: 'memo-view memo-click', title: '클릭하면 크게 보기', onclick: () => openMemo(t.name, t.memo) }, t.memo)
       : el('span', { class: 'none' }, '—'));
   }
 
@@ -1206,6 +1224,14 @@ function evalRow(t, i) {
 }
 
 $('#teamDlgClose').addEventListener('click', () => $('#dlgTeam').close());
+
+/* 메모 확대 팝업 */
+function openMemo(teamName, text) {
+  $('#memoTitle').textContent = `${teamName} 메모`;
+  $('#memoBody').textContent = (text || '').trim() || '작성된 메모가 없습니다.';
+  $('#dlgMemo').showModal();
+}
+$('#memoClose').addEventListener('click', () => $('#dlgMemo').close());
 
 /* 주관식 피드백 팝업 */
 let feedbackTarget = null;
