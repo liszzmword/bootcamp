@@ -221,7 +221,7 @@
   .tinfo .memo-view { min-width: 0; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .tinfo input.pill { height: 34px; font-size: 13px; flex: 1 1 140px; width: auto; min-width: 0; padding: 5px 14px; }
   .tinfo textarea.pill { font-size: 13px; width: 100%; }
-  .save-btn { flex-shrink: 0; }
+  .save-btn { flex-shrink: 0; width: 88px; padding: 0; }  /* 상태('저장'→'저장 중…'→'저장됨')가 바뀌어도 폭 고정 — 줄바꿈 방지 */
   .save-btn:disabled { background: var(--cloud); color: var(--stone); }
   .save-btn.saved, .save-btn.saved:disabled { background: none; color: var(--success); opacity: 1; }
   .pchip .pinbtn { display: inline-flex; }
@@ -310,8 +310,11 @@
 
   /* 평가 입력 (팀 카드 안) — 점수는 인라인, 피드백은 팝업 */
   .evalbox { display: flex; flex-direction: column; gap: 6px; width: 100%; min-width: 0; }
-  .evalbox .erow { display: flex; gap: 8px; align-items: center; }
-  .evalbox select.pill { height: 34px; font-size: 13px; padding: 5px 12px; }
+  .evalbox .erow { display: flex; gap: 8px; align-items: center; flex-wrap: nowrap; }
+  .evalbox select.pill { height: 34px; font-size: 13px; padding: 5px 12px; width: 96px; flex-shrink: 0; }
+  .evalbox .erow .btn { flex-shrink: 0; }
+  .btn.fb-on { background: var(--ink); color: var(--canvas); }
+  .btn.fb-on:hover { background: #2b2b2b; }
   .eval-note { font-size: 11px; color: var(--stone); overflow-wrap: anywhere; }
 
   /* 점수 상세 팝업 (관리자) */
@@ -1187,14 +1190,17 @@ function evalRow(t, i) {
       }
     });
     const hasFb = !!(mine && (mine.comment || '').trim());
+    // 제출 후에도 행 높이·줄이 절대 변하지 않도록: 문구 추가 없이 버튼 색 반전으로만 상태 표시
     return el('div', { class: 'irow' },
       el('span', { class: 'ilabel' }, '평가'),
       el('span', { class: 'ival' }, el('div', { class: 'evalbox' },
         el('div', { class: 'erow' },
           sel,
-          el('button', { class: 'btn sm', onclick: () => openFeedback(t, mine) }, hasFb ? '피드백 작성됨' : '피드백'),
-          mine && mine.score != null ? el('span', { class: 'eval-note' }, '점수 제출됨') : null),
-        !scoreAllowed ? el('div', { class: 'eval-note' }, '점수는 관리자가 평가를 연 동안에만 · 피드백은 지금도 가능') : null)));
+          el('button', {
+            class: 'btn sm' + (hasFb ? ' fb-on' : ''),
+            title: hasFb ? '작성한 피드백 수정' : '이 팀에게 피드백 남기기 (익명 공개)',
+            onclick: () => openFeedback(t, mine),
+          }, '피드백')))));
   }
   return null;
 }
