@@ -289,13 +289,14 @@ begin
   from session_codes sc join sessions s on s.id = sc.session_id
   where lower(sc.code) = lower(trim(coalesce(p_code, ''))) and trim(coalesce(p_code, '')) <> '';
   if v_sid is null then raise exception 'BAD_CODE'; end if;
+  -- 참여코드 입장은 '학생 입구': 관리자 세션이어도 둘러보기로 강등
+  -- (공용 PC에서 관리자 권한이 새는 것 방지 — 관리자는 #admin에서 비밀번호로 재로그인)
+  -- 같은 세션의 팀원이 다시 들어오면 팀원 유지
   insert into profiles (uid, role, person_id, session_id) values (auth.uid(), 'viewer', null, v_sid)
   on conflict (uid) do update set
     session_id = v_sid,
-    role = case when profiles.role = 'admin' then 'admin'
-                when profiles.session_id = v_sid then profiles.role
-                else 'viewer' end,
-    person_id = case when profiles.session_id = v_sid then profiles.person_id else null end;
+    role = case when profiles.role <> 'admin' and profiles.session_id = v_sid then profiles.role else 'viewer' end,
+    person_id = case when profiles.role <> 'admin' and profiles.session_id = v_sid then profiles.person_id else null end;
   return v_name;
 end $$;
 
