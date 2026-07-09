@@ -595,6 +595,7 @@
   <div id="qrBox"></div>
   <div id="qrCode"></div>
   <div id="qrLink"></div>
+  <div class="hint" id="qrRegLine" style="display:none;align-items:center;gap:8px"></div>
   <div class="actions">
     <button class="btn sm" id="qrChangeCode">코드 변경</button>
     <button class="btn sm" id="qrCopy">링크 복사</button>
@@ -768,6 +769,7 @@ const ERR_MAP = {
   BAD_MATCH: '이름과 학번이 일치하지 않습니다. 관리자에게 문의하세요.',
   NO_SNO_SET: '이 이름은 명단에 학번이 등록되어 있지 않습니다. 관리자에게 학번 등록을 요청하세요.',
   SNO_TAKEN: '이미 같은 학번이 명단에 있습니다.',
+  REG_CLOSED: '신규 등록이 마감되었습니다. 관리자에게 문의하세요.',
   NO_TEAM: '아직 팀이 배정되지 않았습니다. 관리자에게 문의하세요.',
   OWN_TEAM: '자기 팀은 평가할 수 없습니다.',
   EVAL_CLOSED: '관리자가 평가를 연 동안에만 점수를 줄 수 있습니다.',
@@ -825,7 +827,7 @@ function applyData(d) {
     ? { role: d.profile.role, personId: d.profile.person_id, sessionId: d.profile.session_id }
     : { role: 'viewer', personId: null, sessionId: null };
   const cur = state.sessions.find(s => s.id === session.sessionId) || null;
-  state.session = cur ? { id: cur.id, name: cur.name, evalOpen: cur.eval_open } : null;
+  state.session = cur ? { id: cur.id, name: cur.name, evalOpen: cur.eval_open, allowRegister: cur.allow_register !== false } : null;
   state.teamCount = cur ? cur.team_count : 0;
   state.notice = cur ? { text: cur.notice, updatedAt: cur.notice_updated_at } : { text: '', updatedAt: null };
   const sid = cur ? cur.id : null;
@@ -1645,18 +1647,36 @@ async function memberEnter() {
   if (!code) { err.textContent = '참여코드를 입력하세요.'; $('#memberCode').focus(); return; }
   if (!sno) { err.textContent = '학번을 입력하세요.'; $('#memberSno').focus(); return; }
   if (!name) { err.textContent = '이름을 입력하세요.'; $('#memberName').focus(); return; }
+  err.textContent = '';
   try {
-    await rpc('member_enter', { p_name: name, p_student_no: sno, p_code: code });
-    saveJoinCode(code);
-    $('#dlgMember').close();
-    await refresh(true);
-    const p = me();
-    toast(p
-      ? (p.team != null
-          ? `${p.name}님, ${state.teams[p.team]?.name || ''} 팀원 모드입니다.`
-          : `${p.name}님, 등록되었습니다 — 관리자의 팀 배정을 기다려주세요.`)
-      : '팀원 모드입니다.');
-  } catch (e) { err.textContent = errMsg(e); }
+    await tryMemberEnter(name, sno, code, false);
+  } catch (e) {
+    // 명단에 없는 이름 → 오타 방지를 위해 명시적으로 확인받고 등록
+    if (((e && e.message) || '').includes('CONFIRM_NEW')) {
+      const ok = await ask({
+        title: '신규 등록',
+        desc: `명단에 없는 이름입니다. '${name}' (학번 ${sno})으로 새로 등록할까요? 이름·학번에 오타가 없는지 확인하세요. 등록 후 관리자가 팀을 배정합니다.`,
+        ok: '새로 등록',
+      });
+      if (!ok) return;
+      try { await tryMemberEnter(name, sno, code, true); }
+      catch (e2) { err.textContent = errMsg(e2); }
+      return;
+    }
+    err.textContent = errMsg(e);
+  }
+}
+async function tryMemberEnter(name, sno, code, register) {
+  await rpc('member_enter', { p_name: name, p_student_no: sno, p_code: code, p_register: register });
+  saveJoinCode(code);
+  $('#dlgMember').close();
+  await refresh(true);
+  const p = me();
+  toast(p
+    ? (p.team != null
+        ? `${p.name}님, ${state.teams[p.team]?.name || ''} 팀원 모드입니다.`
+        : `${p.name}님, 등록되었습니다 — 관리자의 팀 배정을 기다려주세요.`)
+    : '팀원 모드입니다.');
 }
 
 /* ---------- 세션 입장/관리 ---------- */
@@ -1789,8 +1809,26 @@ async function openQr(sess) {
     ? state.sessions.map(s =>
         el('button', { class: 'name-pick' + (s.id === sess.id ? ' active' : ''), onclick: () => openQr(s) }, s.name))
     : []));
-  // 코드 변경은 현재 보고 있는(관리 중인) 세션일 때만 — 다른 세션은 드롭다운으로 전환 후 변경
-  $('#qrChangeCode').style.display = state.session && sess.id === state.session.id ? '' : 'none';
+  // 코드 변경/등록 토글은 현재 관리 중인 세션일 때만 — 다른 세션은 드롭다운으로 전환 후 변경
+  const isCur = state.session && sess.id === state.session.id;
+  $('#qrChangeCode').style.display = isCur ? '' : 'none';
+  const regLine = $('#qrRegLine');
+  if (isCur) {
+    const allowed = state.session.allowRegister;
+    regLine.replaceChildren(
+      el('span', {}, `신규 자체등록 ${allowed ? '허용 중' : '차단됨'} — 명단에 없는 학생의 QR 등록`),
+      el('button', { class: 'btn sm', onclick: async () => {
+        try {
+          await rpc('set_allow_register', { p_allow: !allowed });
+          await refresh(true);
+          toast(!allowed ? '신규 자체등록을 허용했습니다' : '신규 자체등록을 차단했습니다 (명단에 있는 학생만 로그인 가능)');
+          openQr(state.sessions.find(x => x.id === sess.id) || sess);
+        } catch (e) { toast('\u26a0 ' + errMsg(e)); }
+      } }, allowed ? '차단하기' : '허용하기'));
+    regLine.style.display = 'flex';
+  } else {
+    regLine.style.display = 'none';
+  }
   const box = $('#qrBox');
   box.replaceChildren();
   if (typeof qrcode !== 'undefined') {

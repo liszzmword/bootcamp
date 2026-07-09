@@ -32,6 +32,7 @@ create table if not exists public.session_codes (
   code text not null
 );
 create unique index if not exists session_codes_code_uniq on public.session_codes (lower(code));
+alter table public.sessions add column if not exists allow_register boolean not null default true;
 
 create table if not exists public.people (
   id uuid primary key default gen_random_uuid(),
@@ -304,7 +305,8 @@ end $$;
 -- 명단에 있으면 매칭해 로그인, 없으면 자동 등록(팀 미배정). 팀 배정은 관리자가.
 drop function if exists public.member_login(text);        -- 구버전 시그니처들 제거
 drop function if exists public.member_login(text, text);
-create or replace function public.member_enter(p_name text, p_student_no text, p_code text) returns uuid
+drop function if exists public.member_enter(text, text, text);
+create or replace function public.member_enter(p_name text, p_student_no text, p_code text, p_register boolean default false) returns uuid
 language plpgsql security definer set search_path = public as $$
 declare per public.people%rowtype; v_sid uuid; h text; v_name text; v_sno text;
 begin
@@ -333,7 +335,9 @@ begin
     if exists (select 1 from people where session_id = v_sid and name = v_name) then
       raise exception 'BAD_MATCH';
     end if;
-    -- 3) 명단에 전혀 없는 새 이름 → 자체 등록 (팀 미배정)
+    -- 3) 명단에 전혀 없는 새 이름 → 자체 등록 (허용 상태 + 명시적 확인이 있을 때만)
+    if not (select allow_register from sessions where id = v_sid) then raise exception 'REG_CLOSED'; end if;
+    if not coalesce(p_register, false) then raise exception 'CONFIRM_NEW'; end if;
     insert into people (session_id, name, dept, student_no) values (v_sid, v_name, '', v_sno)
     returning * into per;
   end if;
@@ -473,6 +477,14 @@ begin
   end if;
   insert into people (session_id, name, dept, student_no)
   values (v_sid, trim(p_name), coalesce(p_dept, ''), trim(coalesce(p_student_no, '')));
+end $$;
+
+create or replace function public.set_allow_register(p_allow boolean) returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  if not public.is_admin() then raise exception 'NOT_ADMIN'; end if;
+  if public.my_session() is null then raise exception 'NO_SESSION'; end if;
+  update sessions set allow_register = coalesce(p_allow, true) where id = public.my_session();
 end $$;
 
 create or replace function public.remove_person(p_id uuid) returns void
