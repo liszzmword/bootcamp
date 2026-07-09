@@ -7,6 +7,7 @@
 <title>BOOTCAMP TEAM BOARD</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎯</text></svg>">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
 <style>
   /* ===== DESIGN.md 토큰 ===== */
   :root {
@@ -50,7 +51,10 @@
     font-family: var(--font-display); font-weight: 700; font-size: 22px;
     letter-spacing: .5px; text-transform: uppercase; line-height: .9; white-space: nowrap;
   }
-  .wordmark small { display: block; font-family: var(--font-ui); font-size: 9px; font-weight: 500; letter-spacing: 2px; color: var(--mute); }
+  .wordmark small {
+    display: block; font-family: var(--font-ui); font-size: 9px; font-weight: 500; letter-spacing: 2px; color: var(--mute);
+    max-width: 42vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
   .role-chips { margin-left: auto; display: flex; gap: 8px; }
   .chip-btn {
     font: inherit; font-size: 14px; font-weight: 500; cursor: pointer;
@@ -187,7 +191,8 @@
   .tinfo .irow { display: flex; align-items: center; gap: 10px; padding: 10px 16px; border-bottom: 1px solid var(--hairline-soft); }
   .tinfo .irow:last-child { border-bottom: none; }
   .tinfo .ilabel { width: 74px; flex-shrink: 0; font-size: 12px; font-weight: 500; color: var(--mute); }
-  .tinfo .ival { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; font-size: 13px; flex-wrap: wrap; }
+  .tinfo .ival { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; font-size: 13px; flex-wrap: wrap; overflow-wrap: anywhere; }
+  .tinfo .memo-view { white-space: pre-wrap; overflow-wrap: anywhere; min-width: 0; }
   .tinfo input.pill { height: 34px; font-size: 13px; flex: 1 1 140px; width: auto; min-width: 0; padding: 5px 14px; }
   .tinfo textarea.pill { font-size: 13px; width: 100%; }
   .save-btn { flex-shrink: 0; }
@@ -275,12 +280,27 @@
     padding: 2px 8px; max-width: 170px; height: 24px;
   }
 
-  /* 평가 입력 (팀 카드 안) */
-  .evalbox { display: flex; flex-direction: column; gap: 8px; width: 100%; }
-  .evalbox .erow { display: flex; gap: 8px; align-items: center; }
-  .evalbox .erow .save-btn { margin-left: auto; }
+  /* 평가 입력 (팀 카드 안) — 점수는 인라인, 피드백은 팝업 */
+  .evalbox { display: flex; flex-direction: column; gap: 6px; width: 100%; min-width: 0; }
+  .evalbox .erow { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
   .evalbox select.pill { height: 34px; font-size: 13px; padding: 5px 12px; }
-  .eval-note { font-size: 11px; color: var(--stone); }
+  .eval-note { font-size: 11px; color: var(--stone); overflow-wrap: anywhere; }
+
+  /* 팀원 이름 선택 목록 */
+  #memberList { display: flex; flex-wrap: wrap; gap: 6px; max-height: 220px; overflow-y: auto; margin: 4px 0 10px; }
+  .name-pick {
+    font: inherit; font-size: 13px; font-weight: 500; cursor: pointer;
+    background: var(--canvas); border: 1px solid var(--hairline); border-radius: var(--r-pill); padding: 7px 14px;
+  }
+  .name-pick:hover, .name-pick:focus-visible { background: var(--ink); color: var(--canvas); border-color: var(--ink); }
+
+  /* QR 다이얼로그 */
+  #qrSessions { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 10px; }
+  .name-pick.active { background: var(--ink); color: var(--canvas); border-color: var(--ink); }
+  #qrBox { text-align: center; margin: 8px 0; }
+  #qrBox svg { width: 240px; height: 240px; max-width: 100%; }
+  #qrCode { font-family: var(--font-display); font-size: 28px; font-weight: 700; letter-spacing: 2px; text-align: center; margin: 4px 0 8px; }
+  #qrLink { font-size: 11px; color: var(--mute); word-break: break-all; margin-bottom: 8px; }
 
   /* 평가 결과 (관리자 섹션) */
   #evalResults { padding-bottom: 8px; }
@@ -292,7 +312,7 @@
   .eval-line { font-size: 13px; padding: 6px 0; border-top: 1px solid var(--hairline-soft); margin-top: 6px; }
   .eval-line .from { font-weight: 700; margin-right: 6px; }
   .eval-line .pt { font-weight: 700; }
-  .eval-line .cmt { color: var(--charcoal); white-space: pre-wrap; margin-top: 2px; }
+  .eval-line .cmt { color: var(--charcoal); white-space: pre-wrap; overflow-wrap: anywhere; margin-top: 2px; }
   .eval-line .tm { color: var(--stone); font-size: 11px; margin-left: 6px; }
 
   @media (max-width: 900px) {
@@ -352,8 +372,8 @@
 <div id="gate">
   <div class="box">
     <h1>Bootcamp<br>Team Board</h1>
-    <div class="desc">교육 입장 코드를 입력하세요. 코드는 운영자(관리자)에게 안내받을 수 있습니다.</div>
-    <input id="gateCode" class="pill" placeholder="입장 코드" autocomplete="off">
+    <div class="desc">교육 참여코드를 입력하세요. 코드는 운영자(관리자)에게 안내받을 수 있습니다.</div>
+    <input id="gateCode" class="pill" placeholder="참여코드" autocomplete="off">
     <button class="btn primary" id="gateEnter">입장</button>
     <div class="err" id="gateErr"></div>
     <div class="alt" id="gateAltViewer">운영자이신가요? <button id="gateAdminBtn">관리자 로그인</button></div>
@@ -364,7 +384,7 @@
 <div class="utility-bar">
   <select id="sessSelect" class="admin-only" title="교육 세션 전환"></select>
   <button id="btnNewSession" class="admin-only">＋새 교육</button>
-  <button id="btnSessCode" class="admin-only">입장코드</button>
+  <button id="btnQr" class="admin-only">QR·참여코드</button>
   <button id="btnSessRename" class="admin-only">이름변경</button>
   <button id="btnSessDelete" class="admin-only">세션 삭제</button>
   <span id="uStats" class="muted"></span>
@@ -458,7 +478,7 @@
 
     <footer class="fine">
       데이터는 Supabase에 저장되어 같은 교육 세션 접속자에게 실시간 공유됩니다. 팀원은 본인 조의 링크·파일만 수정할 수 있으며 권한은 서버에서 검증됩니다.<br>
-      평가 점수와 피드백은 관리자만 볼 수 있습니다. 입장 코드는 수강생에게만 공유하세요. © 2026 BOOTCAMP TEAM BOARD
+      평가 점수와 피드백은 관리자만 볼 수 있습니다. 참여코드는 수강생에게만 공유하세요. © 2026 BOOTCAMP TEAM BOARD
     </footer>
   </main>
 </div>
@@ -478,23 +498,46 @@
 
 <dialog id="dlgMember">
   <h2>Team Login</h2>
-  <div class="desc">명단에 있는 본인 이름을 입력하세요. 본인 조의 링크·파일 관리와 다른 팀 평가를 할 수 있습니다.</div>
-  <div class="field">
-    <input id="memberName" class="pill" list="nameList" placeholder="이름">
-    <datalist id="nameList"></datalist>
-  </div>
+  <div class="desc">참여코드를 입력하고, 명단에서 <b>본인 이름을 클릭</b>하세요. 본인 조의 링크·파일 관리와 다른 팀 평가를 할 수 있습니다.</div>
+  <div class="field"><input id="memberCode" class="pill" placeholder="참여코드" autocomplete="off"></div>
+  <div class="field"><input id="memberFilter" class="pill" placeholder="이름 검색"></div>
+  <div id="memberList"></div>
   <div class="err" id="memberErr"></div>
   <div class="actions">
-    <button class="btn sm" id="memberCancel">취소</button>
-    <button class="btn sm primary" id="memberOk">확인</button>
+    <button class="btn sm" id="memberCancel">둘러보기로 계속</button>
+  </div>
+</dialog>
+
+<dialog id="dlgFeedback">
+  <h2 id="fbTitle">피드백</h2>
+  <div class="desc">주관식 피드백은 관리자만 볼 수 있습니다. 비워서 저장하면 삭제됩니다.</div>
+  <textarea id="fbText" class="pill" rows="5" style="width:100%" placeholder="이 팀에게 전할 피드백을 적어주세요"></textarea>
+  <div class="err" id="fbErr"></div>
+  <div class="actions">
+    <button class="btn sm" id="fbCancel">취소</button>
+    <button class="btn sm primary" id="fbSave">저장</button>
+  </div>
+</dialog>
+
+<dialog id="dlgQr">
+  <h2>QR 입장</h2>
+  <div class="desc" id="qrDesc">스캔하면 참여코드가 채워진 입장 화면이 열립니다.</div>
+  <div id="qrSessions"></div>
+  <div id="qrBox"></div>
+  <div id="qrCode"></div>
+  <div id="qrLink"></div>
+  <div class="actions">
+    <button class="btn sm" id="qrChangeCode">코드 변경</button>
+    <button class="btn sm" id="qrCopy">링크 복사</button>
+    <button class="btn sm primary" id="qrClose">닫기</button>
   </div>
 </dialog>
 
 <dialog id="dlgSession">
   <h2>New Session</h2>
-  <div class="desc">새 교육 세션을 만듭니다. 입장 코드를 학생들에게 공유하면 이 교육의 보드로 들어옵니다.</div>
+  <div class="desc">새 교육 세션을 만듭니다. 참여코드를 학생들에게 공유하면 이 교육의 보드로 들어옵니다.</div>
   <div class="field"><input id="sessName" class="pill" placeholder="교육명 (예: 7월 AI 부트캠프)"></div>
-  <div class="field"><input id="sessCode" class="pill" placeholder="입장 코드 (예: july-ai)" autocomplete="off"></div>
+  <div class="field"><input id="sessCode" class="pill" placeholder="참여코드 (예: july-ai)" autocomplete="off"></div>
   <div class="err" id="sessErr"></div>
   <div class="actions">
     <button class="btn sm" id="sessCancel">취소</button>
@@ -545,6 +588,12 @@ let filterText = '';
 let uploadTarget = null;
 let lastSnap = '';
 let autoPick = false;                     // 관리자 세션 자동 선택 중복 방지
+let joinCode = '';                        // 이 브라우저에서 마지막으로 쓴 참여코드 (팀원 로그인에 재사용)
+try { joinCode = localStorage.getItem('joinCode') || ''; } catch (e) {}
+function saveJoinCode(code) {
+  joinCode = code;
+  try { localStorage.setItem('joinCode', code); } catch (e) {}
+}
 
 /* ---------- 헬퍼 ---------- */
 function el(tag, attrs = {}, ...children) {
@@ -609,7 +658,7 @@ function normalizeUrl(v) {
 const ERR_MAP = {
   BAD_PASSWORD: '비밀번호가 일치하지 않습니다.',
   PW_TOO_SHORT: '비밀번호는 4자 이상이어야 합니다.',
-  BAD_CODE: '입장 코드가 올바르지 않습니다.',
+  BAD_CODE: '참여코드가 올바르지 않습니다.',
   NO_SESSION: '먼저 교육 세션에 입장해야 합니다.',
   BAD_SESSION: '세션을 찾을 수 없습니다.',
   CODE_TAKEN: '다른 교육에서 이미 쓰는 코드입니다. 다른 코드를 정하세요.',
@@ -975,10 +1024,11 @@ function teamInfo(t, i) {
     const ta = el('textarea', { class: 'pill', rows: 2 }, t.memo || '');
     row('메모', ta, makeSave(ta, async v => { await rpc('update_team_field', { p_idx: t.idx, p_field: 'memo', p_value: v }); t.memo = v; }));
   } else if (t.memo) {
-    row('메모', el('span', {}, t.memo));
+    row('메모', el('span', { class: 'memo-view' }, t.memo));
   }
 
   // 평가: 팀원은 다른 팀만, 관리자는 모든 팀. 결과는 관리자만 열람 (서버 RLS 강제)
+  // 점수는 선택 즉시 제출, 주관식 피드백은 팝업에서 작성
   const canEval = state.session && (isAdmin() || (session.role === 'member' && myTeam() != null && myTeam() !== i));
   if (canEval) {
     const mine = state.myEvals.get(i) || null;
@@ -988,36 +1038,55 @@ function teamInfo(t, i) {
       Array.from({ length: 10 }, (_, k) => el('option', { value: String(k + 1) }, (k + 1) + '점')));
     sel.value = mine && mine.score != null ? String(mine.score) : '';
     if (!scoreAllowed) { sel.disabled = true; sel.title = '관리자가 평가를 열면 점수를 입력할 수 있습니다'; }
-    const ta = el('textarea', { class: 'pill', rows: 2, placeholder: '주관식 피드백 (선택)' }, mine ? mine.comment || '' : '');
-    const btn = el('button', { class: 'btn sm save-btn', disabled: true, onclick: async () => {
-      btn.disabled = true;
-      btn.textContent = '제출 중…';
+    sel.addEventListener('change', async () => {
+      const score = sel.value ? +sel.value : null;
+      sel.disabled = true;
       try {
-        const score = sel.value ? +sel.value : null;
-        const comment = ta.value.trim();
-        await rpc('submit_evaluation', { p_to_team: t.idx, p_score: score, p_comment: comment });
-        btn.textContent = '✓ 제출됨';
-        toast(score == null && !comment ? '평가를 삭제했습니다' : '평가를 제출했습니다 — 관리자만 볼 수 있어요');
-        syncOk();
+        await rpc('submit_eval_score', { p_to_team: t.idx, p_score: score });
+        toast(score != null ? `${t.name}에 ${score}점을 제출했습니다` : '점수를 삭제했습니다');
+        await refresh(true);
       } catch (e) {
-        btn.textContent = '제출';
-        btn.disabled = false;
-        toast('⚠ 제출 실패: ' + errMsg(e));
+        toast('⚠ ' + errMsg(e));
+        sel.value = mine && mine.score != null ? String(mine.score) : '';
+        sel.disabled = !scoreAllowed;
       }
-    } }, '제출');
-    const enable = () => { btn.disabled = false; btn.textContent = '제출'; };
-    sel.addEventListener('change', enable);
-    ta.addEventListener('input', enable);
+    });
+    const hasFb = !!(mine && (mine.comment || '').trim());
     row('평가', el('div', { class: 'evalbox' },
       el('div', { class: 'erow' },
         sel,
-        mine ? el('span', { class: 'eval-note' }, '제출됨 · 다시 제출하면 수정') : null,
-        btn),
-      ta,
-      !scoreAllowed ? el('div', { class: 'eval-note' }, '점수는 관리자가 평가를 연 동안에만 입력 가능 · 피드백은 지금도 제출할 수 있습니다') : null));
+        el('button', { class: 'btn sm', onclick: () => openFeedback(t, mine) }, hasFb ? '피드백 ✓' : '피드백'),
+        mine && mine.score != null ? el('span', { class: 'eval-note' }, '점수 제출됨') : null),
+      !scoreAllowed ? el('div', { class: 'eval-note' }, '점수는 관리자가 평가를 연 동안에만 · 피드백은 지금도 가능') : null));
   }
   return box;
 }
+
+/* 주관식 피드백 팝업 */
+let feedbackTarget = null;
+function openFeedback(t, mine) {
+  feedbackTarget = t.idx;
+  $('#fbTitle').textContent = `${t.name} 피드백`;
+  $('#fbText').value = mine ? mine.comment || '' : '';
+  $('#fbErr').textContent = '';
+  $('#dlgFeedback').showModal();
+  $('#fbText').focus();
+}
+$('#fbSave').addEventListener('click', async () => {
+  if (feedbackTarget == null) return;
+  const btn = $('#fbSave');
+  btn.disabled = true;
+  try {
+    const comment = $('#fbText').value.trim();
+    await rpc('submit_eval_comment', { p_to_team: feedbackTarget, p_comment: comment });
+    $('#dlgFeedback').close();
+    toast(comment ? '피드백을 제출했습니다 — 관리자만 볼 수 있어요' : '피드백을 삭제했습니다');
+    await refresh(true);
+  } catch (e) {
+    $('#fbErr').textContent = errMsg(e);
+  } finally { btn.disabled = false; }
+});
+$('#fbCancel').addEventListener('click', () => $('#dlgFeedback').close());
 
 /* 평가 결과 (관리자 전용 섹션) */
 function renderEval() {
@@ -1335,36 +1404,57 @@ async function authSubmit() {
   } catch (e) { err.textContent = errMsg(e); }
 }
 
+/* 팀원 로그인: 참여코드 입력 + 명단에서 본인 이름 클릭 */
 function openMember() {
   if (authError) { toast('⚠ ' + authError); return; }
-  $('#nameList').replaceChildren(...state.people.map(p => el('option', { value: p.name })));
-  $('#memberName').value = '';
+  $('#memberCode').value = joinCode || '';
+  $('#memberFilter').value = '';
   $('#memberErr').textContent = '';
+  renderMemberList('');
   $('#dlgMember').showModal();
-  $('#memberName').focus();
+  (joinCode ? $('#memberFilter') : $('#memberCode')).focus();
 }
-async function memberSubmit() {
-  const err = $('#memberErr');
+function renderMemberList(q) {
+  q = q.trim().toLowerCase();
+  const list = state.people.filter(p => !q || p.name.toLowerCase().includes(q));
+  $('#memberList').replaceChildren(
+    ...(list.length
+      ? list.map(p => el('button', { class: 'name-pick', title: p.dept || '', onclick: () => memberPick(p.name) }, p.name))
+      : [el('span', { class: 'eval-note' }, '해당하는 이름이 없습니다. 관리자에게 문의하세요.')]));
+}
+async function memberPick(name) {
+  const code = $('#memberCode').value.trim();
+  if (!code) {
+    $('#memberErr').textContent = '참여코드를 먼저 입력하세요.';
+    $('#memberCode').focus();
+    return;
+  }
   try {
-    await rpc('member_login', { p_name: $('#memberName').value.trim() });
+    await rpc('member_login', { p_name: name, p_code: code });
+    saveJoinCode(code);
     $('#dlgMember').close();
     await refresh(true);
     const p = me();
     toast(p ? `${p.name}님, ${state.teams[p.team]?.name || ''} 팀원 모드입니다.` : '팀원 모드입니다.');
-  } catch (e) { err.textContent = errMsg(e); }
+  } catch (e) { $('#memberErr').textContent = errMsg(e); }
 }
 
 /* ---------- 세션 입장/관리 ---------- */
+async function enterByCode(code) {
+  const name = await rpc('enter_session', { p_code: code });
+  saveJoinCode(code);
+  await refresh(true);
+  toast(`'${name}'에 입장했습니다`);
+  if (session.role === 'viewer') openMember(); // 바로 이름을 골라 팀원으로 들어올 수 있게
+}
 async function gateEnter() {
   const code = $('#gateCode').value.trim();
   if (!code) return;
   $('#gateErr').textContent = '';
   try {
     if (authError) throw new Error(authError);
-    const name = await rpc('enter_session', { p_code: code });
+    await enterByCode(code);
     $('#gateCode').value = '';
-    await refresh(true);
-    toast(`'${name}'에 입장했습니다`);
   } catch (e) { $('#gateErr').textContent = errMsg(e); }
 }
 
@@ -1378,12 +1468,13 @@ async function sessionCreate() {
   const name = $('#sessName').value.trim();
   const code = $('#sessCode').value.trim();
   const err = $('#sessErr');
-  if (!name || !code) { err.textContent = '교육명과 입장 코드를 모두 입력하세요.'; return; }
+  if (!name || !code) { err.textContent = '교육명과 참여코드를 모두 입력하세요.'; return; }
   try {
     await rpc('create_session', { p_name: name, p_code: code });
     $('#dlgSession').close();
     await refresh(true);
-    toast(`새 교육 '${name}'을(를) 만들었습니다 — 입장 코드: ${code}`);
+    toast(`새 교육 '${name}'을(를) 만들었습니다 — 참여코드: ${code}`);
+    openQr(); // 만든 즉시 QR을 띄워 학생들에게 공유
   } catch (e) { err.textContent = errMsg(e); }
 }
 
@@ -1400,9 +1491,16 @@ $('#uChangePw').addEventListener('click', () => openAuth('change'));
 $('#authOk').addEventListener('click', authSubmit);
 $('#authCancel').addEventListener('click', () => $('#dlgAuth').close());
 $('#dlgAuth').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); authSubmit(); } });
-$('#memberOk').addEventListener('click', memberSubmit);
 $('#memberCancel').addEventListener('click', () => $('#dlgMember').close());
-$('#dlgMember').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); memberSubmit(); } });
+$('#memberFilter').addEventListener('input', e => renderMemberList(e.target.value));
+$('#memberCode').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); $('#memberFilter').focus(); } });
+$('#memberFilter').addEventListener('keydown', e => {
+  if (e.key !== 'Enter') return;
+  e.preventDefault();
+  const q = e.target.value.trim().toLowerCase();
+  const hits = state.people.filter(p => q && p.name.toLowerCase().includes(q));
+  if (hits.length === 1) memberPick(hits[0].name); // 정확히 한 명이면 Enter로 바로 선택
+});
 
 $('#noticeEditBtn').addEventListener('click', () => {
   $('#noticeInput').value = state.notice.text;
@@ -1441,9 +1539,9 @@ $('#gateCode').addEventListener('keydown', e => { if (e.key === 'Enter') gateEnt
 $('#gateAdminBtn').addEventListener('click', () => openAuth(state.adminSet ? 'login' : 'setup'));
 $('#gateNewSession').addEventListener('click', openSessionDialog);
 $('#uSwitch').addEventListener('click', async () => {
-  const code = await ask({ title: '세션 변경', desc: '다른 교육의 입장 코드를 입력하세요.', input: { placeholder: '입장 코드' }, ok: '입장' });
+  const code = await ask({ title: '세션 변경', desc: '다른 교육의 참여코드를 입력하세요.', input: { placeholder: '참여코드' }, ok: '입장' });
   if (!code || !code.trim()) return;
-  act(() => rpc('enter_session', { p_code: code.trim() }), r => `'${r}'에 입장했습니다`);
+  try { await enterByCode(code.trim()); } catch (e) { toast('⚠ ' + errMsg(e)); }
 });
 
 /* 세션 관리 (관리자) */
@@ -1452,22 +1550,67 @@ $('#btnNewSession').addEventListener('click', openSessionDialog);
 $('#sessOk').addEventListener('click', sessionCreate);
 $('#sessCancel').addEventListener('click', () => $('#dlgSession').close());
 $('#dlgSession').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); sessionCreate(); } });
-$('#btnSessCode').addEventListener('click', async () => {
+/* QR·참여코드: 세션 참여코드가 담긴 링크를 QR로 보여주고, 코드 변경도 여기서.
+   팝업 안의 세션 칩을 클릭하면 이미 만들어진 다른 세션의 QR도 바로 확인 가능 */
+async function fetchSessionCode(sid) {
+  const { data } = await sb.from('session_codes').select('code').eq('session_id', sid).maybeSingle();
+  return data ? data.code : '';
+}
+let qrUrl = '';
+async function openQr(sess) {
+  sess = sess && sess.id ? sess : state.session; // 이벤트 핸들러로 불리면 첫 인자가 event이므로 걸러냄
+  if (!sess) return;
+  let code = '';
+  try { code = await fetchSessionCode(sess.id); } catch (e) {}
+  if (!code) {
+    if (state.session && sess.id === state.session.id) changeSessionCode();
+    else toast('⚠ 이 세션의 참여코드를 읽지 못했습니다');
+    return;
+  }
+  qrUrl = location.origin + location.pathname + '#code=' + encodeURIComponent(code);
+  $('#qrDesc').textContent = `'${sess.name}' — 스캔하면 참여코드가 채워진 입장 화면이 열립니다.`;
+  $('#qrCode').textContent = code;
+  $('#qrLink').textContent = qrUrl;
+  // 세션 칩: 클릭하면 그 세션의 QR로 전환
+  $('#qrSessions').replaceChildren(...(state.sessions.length > 1
+    ? state.sessions.map(s =>
+        el('button', { class: 'name-pick' + (s.id === sess.id ? ' active' : ''), onclick: () => openQr(s) }, s.name))
+    : []));
+  // 코드 변경은 현재 보고 있는(관리 중인) 세션일 때만 — 다른 세션은 드롭다운으로 전환 후 변경
+  $('#qrChangeCode').style.display = state.session && sess.id === state.session.id ? '' : 'none';
+  const box = $('#qrBox');
+  box.replaceChildren();
+  if (typeof qrcode !== 'undefined') {
+    const qr = qrcode(0, 'M');
+    qr.addData(qrUrl);
+    qr.make();
+    box.innerHTML = qr.createSvgTag({ cellSize: 6, margin: 2, scalable: true });
+  } else {
+    box.append(el('span', { class: 'eval-note' }, 'QR 라이브러리를 불러오지 못했습니다 — 아래 링크를 직접 공유하세요.'));
+  }
+  if (!$('#dlgQr').open) $('#dlgQr').showModal();
+}
+async function changeSessionCode() {
   if (!state.session) return;
   let cur = '';
-  try {
-    const { data } = await sb.from('session_codes').select('code').eq('session_id', state.session.id).maybeSingle();
-    cur = data ? data.code : '';
-  } catch (e) { /* 코드 조회 실패해도 새로 설정은 가능 */ }
+  try { cur = await fetchSessionCode(state.session.id); } catch (e) {}
   const code = await ask({
-    title: '입장코드',
-    desc: '학생들은 이 코드로 세션에 입장합니다. 바꾸면 새 코드만 유효합니다.',
+    title: '참여코드',
+    desc: '학생들은 이 코드로 입장하고 팀원 로그인할 때도 입력합니다. 바꾸면 새 코드만 유효합니다.',
     input: { value: cur, placeholder: '예: july-ai' },
     ok: '저장',
   });
   if (code == null) return;
   if (!code.trim()) { toast('⚠ 코드는 비울 수 없습니다'); return; }
-  act(() => rpc('set_session_code', { p_code: code.trim() }), '입장코드를 저장했습니다. 학생들에게 공유하세요.');
+  act(() => rpc('set_session_code', { p_code: code.trim() }), '참여코드를 저장했습니다. QR·참여코드에서 QR을 공유하세요.');
+}
+$('#btnQr').addEventListener('click', openQr);
+$('#qrChangeCode').addEventListener('click', () => { $('#dlgQr').close(); changeSessionCode(); });
+$('#qrClose').addEventListener('click', () => $('#dlgQr').close());
+$('#qrCopy').addEventListener('click', () => {
+  (navigator.clipboard?.writeText(qrUrl) || Promise.reject()).then(
+    () => toast('입장 링크를 복사했습니다'),
+    () => toast('⚠ 복사하지 못했습니다 — 링크를 직접 선택해 복사하세요'));
 });
 $('#btnSessRename').addEventListener('click', async () => {
   if (!state.session) return;
@@ -1547,8 +1690,20 @@ document.body.addEventListener('focusout', () => setTimeout(() => { if (!isEditi
     return;
   }
   sb = supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
+  // QR로 진입: URL 해시(#code=...)의 참여코드로 자동 입장
+  const hm = location.hash.match(/[#&]code=([^&]+)/);
+  const pendingJoin = hm ? decodeURIComponent(hm[1]) : null;
+  if (hm) history.replaceState(null, '', location.pathname + location.search);
   try { await ensureAuth(); } catch (e) { console.warn(e); }
   await refresh(true);
+  if (pendingJoin) {
+    try {
+      await enterByCode(pendingJoin);
+    } catch (e) {
+      $('#gateCode').value = pendingJoin;
+      $('#gateErr').textContent = errMsg(e);
+    }
+  }
   setInterval(() => { if (!document.hidden) refresh(); }, 10000);
   document.addEventListener('visibilitychange', () => { if (!document.hidden) refresh(); });
 })();

@@ -2,3 +2,5 @@
 node_modules/
 .vercel/
 *.xlsx
+*.png
+스크린샷*

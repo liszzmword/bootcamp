@@ -289,14 +289,17 @@ begin
   return v_name;
 end $$;
 
--- 팀원 로그인: 세션 입장 후, 그 세션 명단의 이름으로
-create or replace function public.member_login(p_name text) returns uuid
+-- 팀원 로그인: 참여코드 + 그 세션 명단의 이름 (코드는 서버가 검증)
+drop function if exists public.member_login(text);  -- 구버전(코드 없는 시그니처) 제거
+create or replace function public.member_login(p_name text, p_code text) returns uuid
 language plpgsql security definer set search_path = public as $$
-declare per public.people%rowtype; v_sid uuid;
+declare per public.people%rowtype; v_sid uuid; h text;
 begin
   if auth.uid() is null then raise exception 'NOT_AUTHENTICATED'; end if;
   v_sid := public.my_session();
   if v_sid is null then raise exception 'NO_SESSION'; end if;
+  select code into h from session_codes where session_id = v_sid;
+  if h is null or lower(h) <> lower(trim(coalesce(p_code, ''))) then raise exception 'BAD_CODE'; end if;
   select * into per from people where session_id = v_sid and name = trim(p_name);
   if not found then raise exception 'NO_NAME'; end if;
   if per.team is null then raise exception 'NO_TEAM'; end if;
@@ -311,9 +314,8 @@ language sql security definer set search_path = public as $$
   update public.profiles set role = 'viewer', person_id = null where uid = auth.uid();
 $$;
 
--- v1 잔재 제거 (참여코드 → 세션 입장 코드로 대체, member_login 시그니처 변경)
+-- v1 잔재 제거
 drop function if exists public.set_access_code(text);
-drop function if exists public.member_login(text, text);
 
 -- ---------------- 세션 관리 (관리자) ----------------
 create or replace function public.create_session(p_name text, p_code text) returns uuid
@@ -540,52 +542,76 @@ begin
   update sessions set eval_open = coalesce(p_open, false) where id = public.my_session();
 end $$;
 
--- 평가 제출/수정. 점수+코멘트 모두 비우면 본인 평가 삭제.
--- 팀원: 자기 팀 제외, 점수는 eval_open일 때만 (코멘트는 상시). 관리자: 제한 없음.
-create or replace function public.submit_evaluation(p_to_team int, p_score int, p_comment text) returns void
+-- 평가는 점수/피드백을 따로 제출 (같은 행에 병합 저장, 둘 다 비면 행 삭제)
+-- 팀원: 자기 팀 제외. 점수는 eval_open일 때만, 피드백은 상시. 관리자: 제한 없음.
+drop function if exists public.submit_evaluation(int, int, text);  -- 구버전 통합 함수 제거
+
+-- 공용 검증: 평가자 정보 반환 (관리자는 person null / uid, 팀원은 person / from_team)
+create or replace function public._eval_actor(p_to_team int, out o_sid uuid, out o_open boolean,
+                                              out o_person uuid, out o_from int, out o_uid uuid)
 language plpgsql security definer set search_path = public as $$
-declare v_sid uuid; v_cnt int; v_open boolean; v_from int; v_person uuid; v_uid uuid; v_comment text;
+declare v_cnt int;
 begin
-  v_sid := public.my_session();
-  if v_sid is null then raise exception 'NO_SESSION'; end if;
-  select team_count, eval_open into v_cnt, v_open from sessions where id = v_sid;
+  o_sid := public.my_session();
+  if o_sid is null then raise exception 'NO_SESSION'; end if;
+  select team_count, eval_open into v_cnt, o_open from sessions where id = o_sid;
   if p_to_team is null or p_to_team < 0 or p_to_team >= v_cnt then raise exception 'BAD_TEAM'; end if;
-  if p_score is not null and (p_score < 1 or p_score > 10) then raise exception 'BAD_SCORE'; end if;
-  v_comment := trim(coalesce(p_comment, ''));
-
   if public.is_admin() then
-    v_uid := auth.uid(); v_person := null; v_from := null;
+    o_uid := auth.uid(); o_person := null; o_from := null;
   else
-    select pr.person_id, pe.team into v_person, v_from
+    select pr.person_id, pe.team into o_person, o_from
     from profiles pr join people pe on pe.id = pr.person_id
-    where pr.uid = auth.uid() and pr.role = 'member' and pr.session_id = v_sid;
-    if v_person is null then raise exception 'NOT_ALLOWED'; end if;
-    if v_from is null then raise exception 'NO_TEAM'; end if;
-    if v_from = p_to_team then raise exception 'OWN_TEAM'; end if;
-    if p_score is not null and not v_open then raise exception 'EVAL_CLOSED'; end if;
+    where pr.uid = auth.uid() and pr.role = 'member' and pr.session_id = o_sid;
+    if o_person is null then raise exception 'NOT_ALLOWED'; end if;
+    if o_from is null then raise exception 'NO_TEAM'; end if;
+    if o_from = p_to_team then raise exception 'OWN_TEAM'; end if;
   end if;
+end $$;
+revoke execute on function public._eval_actor(int) from anon, authenticated;  -- 내부 전용
 
-  if p_score is null and v_comment = '' then
-    if v_person is not null then
-      delete from evaluations where session_id = v_sid and to_team = p_to_team and evaluator_person = v_person;
-    else
-      delete from evaluations where session_id = v_sid and to_team = p_to_team and evaluator_uid = v_uid;
-    end if;
-    return;
-  end if;
-
-  if v_person is not null then
-    insert into evaluations (session_id, to_team, from_team, evaluator_person, score, comment)
-    values (v_sid, p_to_team, v_from, v_person, p_score, v_comment)
+create or replace function public.submit_eval_score(p_to_team int, p_score int) returns void
+language plpgsql security definer set search_path = public as $$
+declare a record;
+begin
+  select * into a from public._eval_actor(p_to_team);
+  if p_score is not null and (p_score < 1 or p_score > 10) then raise exception 'BAD_SCORE'; end if;
+  if a.o_person is not null and not a.o_open then raise exception 'EVAL_CLOSED'; end if;
+  if a.o_person is not null then
+    insert into evaluations (session_id, to_team, from_team, evaluator_person, score)
+    values (a.o_sid, p_to_team, a.o_from, a.o_person, p_score)
     on conflict (session_id, evaluator_person, to_team) where evaluator_person is not null
-    do update set score = excluded.score, comment = excluded.comment,
-                  from_team = excluded.from_team, updated_at = now();
+    do update set score = excluded.score, from_team = excluded.from_team, updated_at = now();
   else
-    insert into evaluations (session_id, to_team, from_team, evaluator_uid, score, comment)
-    values (v_sid, p_to_team, null, v_uid, p_score, v_comment)
+    insert into evaluations (session_id, to_team, evaluator_uid, score)
+    values (a.o_sid, p_to_team, a.o_uid, p_score)
     on conflict (session_id, evaluator_uid, to_team) where evaluator_uid is not null
-    do update set score = excluded.score, comment = excluded.comment, updated_at = now();
+    do update set score = excluded.score, updated_at = now();
   end if;
+  delete from evaluations
+  where session_id = a.o_sid and to_team = p_to_team and score is null and trim(comment) = ''
+    and (evaluator_person = a.o_person or evaluator_uid = a.o_uid);
+end $$;
+
+create or replace function public.submit_eval_comment(p_to_team int, p_comment text) returns void
+language plpgsql security definer set search_path = public as $$
+declare a record; v_comment text;
+begin
+  select * into a from public._eval_actor(p_to_team);
+  v_comment := trim(coalesce(p_comment, ''));
+  if a.o_person is not null then
+    insert into evaluations (session_id, to_team, from_team, evaluator_person, comment)
+    values (a.o_sid, p_to_team, a.o_from, a.o_person, v_comment)
+    on conflict (session_id, evaluator_person, to_team) where evaluator_person is not null
+    do update set comment = excluded.comment, from_team = excluded.from_team, updated_at = now();
+  else
+    insert into evaluations (session_id, to_team, evaluator_uid, comment)
+    values (a.o_sid, p_to_team, a.o_uid, v_comment)
+    on conflict (session_id, evaluator_uid, to_team) where evaluator_uid is not null
+    do update set comment = excluded.comment, updated_at = now();
+  end if;
+  delete from evaluations
+  where session_id = a.o_sid and to_team = p_to_team and score is null and trim(comment) = ''
+    and (evaluator_person = a.o_person or evaluator_uid = a.o_uid);
 end $$;
 
 -- ---------------- Storage (PPT 파일) ----------------
