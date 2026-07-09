@@ -251,6 +251,50 @@
   #setup ol { padding-left: 20px; font-size: 14px; line-height: 2; }
   #setup code { background: var(--cloud); padding: 2px 8px; font-size: 12.5px; }
 
+  /* 세션 입장 게이트 */
+  #gate {
+    position: fixed; inset: 0; background: var(--canvas); z-index: 40;
+    display: none; align-items: center; justify-content: center; padding: 24px;
+  }
+  #gate .box { width: 360px; max-width: 92vw; }
+  #gate h1 { font-family: var(--font-display); text-transform: uppercase; font-size: 44px; font-weight: 700; line-height: .9; margin-bottom: 10px; }
+  #gate .desc { font-size: 13px; color: var(--mute); margin-bottom: 20px; }
+  #gate input.pill { width: 100%; }
+  #gate .btn { width: 100%; margin-top: 10px; }
+  #gate .err { color: var(--sale); font-size: 12.5px; font-weight: 500; min-height: 18px; margin-top: 8px; }
+  #gate .alt { margin-top: 18px; font-size: 12px; color: var(--mute); }
+  #gate .alt button {
+    background: none; border: none; font: inherit; color: var(--ink); cursor: pointer;
+    text-decoration: underline; text-underline-offset: 3px; padding: 0;
+  }
+
+  /* 세션 선택 (관리자, 유틸리티 바) */
+  .utility-bar select {
+    font: inherit; font-size: 12px; font-weight: 500; border: 1px solid var(--hairline);
+    background: var(--canvas); color: var(--ink); border-radius: var(--r-pill);
+    padding: 2px 8px; max-width: 170px; height: 24px;
+  }
+
+  /* 평가 입력 (팀 카드 안) */
+  .evalbox { display: flex; flex-direction: column; gap: 8px; width: 100%; }
+  .evalbox .erow { display: flex; gap: 8px; align-items: center; }
+  .evalbox .erow .save-btn { margin-left: auto; }
+  .evalbox select.pill { height: 34px; font-size: 13px; padding: 5px 12px; }
+  .eval-note { font-size: 11px; color: var(--stone); }
+
+  /* 평가 결과 (관리자 섹션) */
+  #evalResults { padding-bottom: 8px; }
+  .eval-team { border: 1px solid var(--hairline-soft); padding: 14px 16px; margin-bottom: 8px; }
+  .eval-team .ehead { display: flex; align-items: baseline; gap: 10px; font-weight: 700; flex-wrap: wrap; }
+  .eval-team .ehead .dot { align-self: center; }
+  .eval-team .escore { font-family: var(--font-display); font-size: 20px; }
+  .eval-team .ecnt { color: var(--mute); font-size: 12px; font-weight: 500; }
+  .eval-line { font-size: 13px; padding: 6px 0; border-top: 1px solid var(--hairline-soft); margin-top: 6px; }
+  .eval-line .from { font-weight: 700; margin-right: 6px; }
+  .eval-line .pt { font-weight: 700; }
+  .eval-line .cmt { color: var(--charcoal); white-space: pre-wrap; margin-top: 2px; }
+  .eval-line .tm { color: var(--stone); font-size: 11px; margin-left: 6px; }
+
   @media (max-width: 900px) {
     body { overflow: auto; height: auto; }
     .layout { flex-direction: column; }
@@ -305,10 +349,28 @@
   </div>
 </div>
 
+<div id="gate">
+  <div class="box">
+    <h1>Bootcamp<br>Team Board</h1>
+    <div class="desc">교육 입장 코드를 입력하세요. 코드는 운영자(관리자)에게 안내받을 수 있습니다.</div>
+    <input id="gateCode" class="pill" placeholder="입장 코드" autocomplete="off">
+    <button class="btn primary" id="gateEnter">입장</button>
+    <div class="err" id="gateErr"></div>
+    <div class="alt" id="gateAltViewer">운영자이신가요? <button id="gateAdminBtn">관리자 로그인</button></div>
+    <div class="alt admin-only">관리자 모드입니다. 코드로 입장하거나 <button id="gateNewSession">＋ 새 교육 만들기</button></div>
+  </div>
+</div>
+
 <div class="utility-bar">
+  <select id="sessSelect" class="admin-only" title="교육 세션 전환"></select>
+  <button id="btnNewSession" class="admin-only">＋새 교육</button>
+  <button id="btnSessCode" class="admin-only">입장코드</button>
+  <button id="btnSessRename" class="admin-only">이름변경</button>
+  <button id="btnSessDelete" class="admin-only">세션 삭제</button>
   <span id="uStats" class="muted"></span>
   <span id="uSync"></span>
   <span class="spacer"></span>
+  <button id="uSwitch" hidden>세션 변경</button>
   <span id="uRole"></span>
   <button id="uChangePw" class="admin-only">비밀번호 변경</button>
   <button id="uLogout" hidden>로그아웃</button>
@@ -373,12 +435,18 @@
         <span class="group-gap"></span>
         <button class="btn" id="btnCsv">CSV 다운로드</button>
         <button class="btn" id="btnCopy">결과 복사</button>
-        <span class="group-gap"></span>
-        <button class="btn" id="btnCode">참여코드</button>
       </div>
       <div class="hint">이름 칩을 드래그해 팀 이동(자동 고정 📌) · 📌 클릭으로 고정 해제 · 랜덤 배정은 고정 인원을 제외하고 섞습니다</div>
       <div class="section-head" style="font-size:16px">Unassigned <span class="sub" id="unCnt"></span></div>
       <div class="pool" id="unassigned"><div class="members"></div></div>
+
+      <div class="section-head">Evaluation <span class="sub" id="evalSub"></span></div>
+      <div class="toolbar">
+        <button class="btn" id="btnEvalOpen"></button>
+        <button class="btn" id="btnEvalCsv">평가 CSV</button>
+      </div>
+      <div class="hint">점수(1~10)는 [평가 열기]를 누른 동안에만 팀원이 입력할 수 있습니다. 주관식 피드백은 언제든 제출 가능하며, 결과는 관리자만 볼 수 있습니다. 관리자는 항상 평가할 수 있습니다.</div>
+      <div id="evalResults"></div>
     </div>
 
     <div id="mySection" hidden>
@@ -389,8 +457,8 @@
     <div id="teamsGrid"><span style="color:var(--stone);font-size:13px">불러오는 중…</span></div>
 
     <footer class="fine">
-      데이터는 Supabase에 저장되어 모든 접속자에게 실시간 공유됩니다. 팀원은 본인 조의 링크·파일만 수정할 수 있으며 권한은 서버에서 검증됩니다.<br>
-      팀원 로그인 무단 사용이 걱정되면 관리자 메뉴에서 참여코드를 설정하세요. © 2026 BOOTCAMP TEAM BOARD
+      데이터는 Supabase에 저장되어 같은 교육 세션 접속자에게 실시간 공유됩니다. 팀원은 본인 조의 링크·파일만 수정할 수 있으며 권한은 서버에서 검증됩니다.<br>
+      평가 점수와 피드백은 관리자만 볼 수 있습니다. 입장 코드는 수강생에게만 공유하세요. © 2026 BOOTCAMP TEAM BOARD
     </footer>
   </main>
 </div>
@@ -410,16 +478,27 @@
 
 <dialog id="dlgMember">
   <h2>Team Login</h2>
-  <div class="desc">명단에 있는 본인 이름을 입력하세요. 본인 조의 PPT·서비스 링크와 파일을 관리할 수 있습니다.</div>
+  <div class="desc">명단에 있는 본인 이름을 입력하세요. 본인 조의 링크·파일 관리와 다른 팀 평가를 할 수 있습니다.</div>
   <div class="field">
     <input id="memberName" class="pill" list="nameList" placeholder="이름">
     <datalist id="nameList"></datalist>
   </div>
-  <div class="field" id="fCode" hidden><input id="memberCode" class="pill" placeholder="참여코드"></div>
   <div class="err" id="memberErr"></div>
   <div class="actions">
     <button class="btn sm" id="memberCancel">취소</button>
     <button class="btn sm primary" id="memberOk">확인</button>
+  </div>
+</dialog>
+
+<dialog id="dlgSession">
+  <h2>New Session</h2>
+  <div class="desc">새 교육 세션을 만듭니다. 입장 코드를 학생들에게 공유하면 이 교육의 보드로 들어옵니다.</div>
+  <div class="field"><input id="sessName" class="pill" placeholder="교육명 (예: 7월 AI 부트캠프)"></div>
+  <div class="field"><input id="sessCode" class="pill" placeholder="입장 코드 (예: july-ai)" autocomplete="off"></div>
+  <div class="err" id="sessErr"></div>
+  <div class="actions">
+    <button class="btn sm" id="sessCancel">취소</button>
+    <button class="btn sm primary" id="sessOk">만들기</button>
   </div>
 </dialog>
 
@@ -453,11 +532,19 @@ const MAX_FILE_MB = 50; // Supabase 무료 플랜 파일 업로드 한도
 
 let sb = null;
 let authError = null;
-let state = { teamCount: 5, people: [], teams: [], notice: { text: '', updatedAt: null }, accessCodeRequired: false, adminSet: false };
-let session = { role: 'viewer', personId: null };
+let myUid = null;
+let state = {
+  sessions: [], session: null,            // session: 현재 교육 { id, name, evalOpen }
+  teamCount: 0, people: [], teams: [],
+  notice: { text: '', updatedAt: null },
+  evals: [], myEvals: new Map(),          // myEvals: to_team → 내가 제출한 평가
+  adminSet: false,
+};
+let session = { role: 'viewer', personId: null, sessionId: null };
 let filterText = '';
 let uploadTarget = null;
 let lastSnap = '';
+let autoPick = false;                     // 관리자 세션 자동 선택 중복 방지
 
 /* ---------- 헬퍼 ---------- */
 function el(tag, attrs = {}, ...children) {
@@ -510,12 +597,29 @@ const fmtSize = b => b >= 1048576 ? (b / 1048576).toFixed(1) + 'MB' : Math.max(1
 const fmtDate = iso => iso ? new Date(iso).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
 const teamColor = i => `hsl(${(i * 137.5) % 360} 62% 52%)`;
 
+/* 스킴 없이 입력한 주소(myapp.vercel.app)도 클릭 가능한 링크가 되도록 https:// 를 붙임.
+   javascript: 등 다른 스킴은 그대로 두고 링크로 렌더링하지 않음 */
+function normalizeUrl(v) {
+  v = (v || '').trim();
+  if (!v || /^https?:\/\//i.test(v)) return v;
+  if (/^[a-z][a-z0-9+.\-]*:/i.test(v)) return v;
+  return (v.includes('.') || v.startsWith('localhost')) ? 'https://' + v : v;
+}
+
 const ERR_MAP = {
   BAD_PASSWORD: '비밀번호가 일치하지 않습니다.',
   PW_TOO_SHORT: '비밀번호는 4자 이상이어야 합니다.',
-  BAD_CODE: '참여코드가 올바르지 않습니다.',
+  BAD_CODE: '입장 코드가 올바르지 않습니다.',
+  NO_SESSION: '먼저 교육 세션에 입장해야 합니다.',
+  BAD_SESSION: '세션을 찾을 수 없습니다.',
+  CODE_TAKEN: '다른 교육에서 이미 쓰는 코드입니다. 다른 코드를 정하세요.',
+  EMPTY_CODE: '코드를 입력하세요.',
   NO_NAME: '명단에 없는 이름입니다.',
   NO_TEAM: '아직 팀이 배정되지 않았습니다. 관리자에게 문의하세요.',
+  OWN_TEAM: '자기 팀은 평가할 수 없습니다.',
+  EVAL_CLOSED: '관리자가 평가를 연 동안에만 점수를 줄 수 있습니다.',
+  BAD_TEAM: '평가 대상 팀이 올바르지 않습니다.',
+  BAD_SCORE: '점수는 1~10점 사이여야 합니다.',
   NOT_ADMIN: '관리자 권한이 필요합니다 — 우측 상단에서 관리자로 다시 로그인해 주세요.',
   NOT_ALLOWED: '이 항목을 수정할 권한이 없습니다.',
   NOT_AUTHENTICATED: '연결 세션이 없습니다. 새로고침 후 다시 시도하세요.',
@@ -531,12 +635,13 @@ function errMsg(e) {
 /* ---------- Supabase 데이터 계층 ---------- */
 async function ensureAuth() {
   const { data: { session: s } } = await sb.auth.getSession();
-  if (s) return;
-  const { error } = await sb.auth.signInAnonymously();
+  if (s) { myUid = s.user.id; return; }
+  const { data, error } = await sb.auth.signInAnonymously();
   if (error) {
     authError = '접속 세션 생성 실패: ' + error.message + ' — Supabase에서 "Allow anonymous sign-ins"가 켜져 있는지 확인하세요.';
     throw new Error(authError);
   }
+  myUid = data && data.user ? data.user.id : null;
 }
 
 async function rpc(fn, args) {
@@ -546,28 +651,39 @@ async function rpc(fn, args) {
 }
 
 async function fetchAll() {
-  const [pe, te, sec, st, pr] = await Promise.all([
-    sb.from('people').select('id,name,dept,team,pin'),
-    sb.from('teams').select('idx,name,ppt,link,memo,ppt_file').order('idx'),
-    sb.from('team_secrets').select('idx,api'),
+  const [se, pe, te, sec, st, pr, ev] = await Promise.all([
+    sb.from('sessions').select('*').order('created_at', { ascending: false }),
+    sb.from('people').select('id,session_id,name,dept,team,pin'),
+    sb.from('teams').select('session_id,idx,name,ppt,link,memo,ppt_file').order('idx'),
+    sb.from('team_secrets').select('session_id,idx,api'),
     sb.from('settings').select('*').eq('id', 1).single(),
-    sb.from('profiles').select('role,person_id').maybeSingle(),
+    sb.from('profiles').select('role,person_id,session_id').maybeSingle(),
+    sb.from('evaluations').select('*'),
   ]);
-  for (const r of [pe, te, sec, st, pr]) if (r.error) throw r.error;
-  return { people: pe.data, teams: te.data, secrets: sec.data, settings: st.data, profile: pr.data };
+  for (const r of [se, pe, te, sec, st, pr, ev]) if (r.error) throw r.error;
+  return { sessions: se.data, people: pe.data, teams: te.data, secrets: sec.data, settings: st.data, profile: pr.data, evals: ev.data };
 }
 
 function applyData(d) {
-  state.teamCount = d.settings.team_count;
-  state.notice = { text: d.settings.notice, updatedAt: d.settings.notice_updated_at };
-  state.accessCodeRequired = d.settings.access_code_required;
   state.adminSet = d.settings.admin_set;
-  const secrets = new Map(d.secrets.map(s => [s.idx, s.api]));
+  state.sessions = d.sessions;
+  session = d.profile
+    ? { role: d.profile.role, personId: d.profile.person_id, sessionId: d.profile.session_id }
+    : { role: 'viewer', personId: null, sessionId: null };
+  const cur = state.sessions.find(s => s.id === session.sessionId) || null;
+  state.session = cur ? { id: cur.id, name: cur.name, evalOpen: cur.eval_open } : null;
+  state.teamCount = cur ? cur.team_count : 0;
+  state.notice = cur ? { text: cur.notice, updatedAt: cur.notice_updated_at } : { text: '', updatedAt: null };
+  const sid = cur ? cur.id : null;
+  const secrets = new Map(d.secrets.filter(s => s.session_id === sid).map(s => [s.idx, s.api]));
   state.teams = d.teams
-    .filter(t => t.idx < state.teamCount)
+    .filter(t => t.session_id === sid && t.idx < state.teamCount)
     .map(t => ({ idx: t.idx, name: t.name, ppt: t.ppt, link: t.link, memo: t.memo, pptFile: t.ppt_file, api: secrets.has(t.idx) ? secrets.get(t.idx) : null }));
-  state.people = d.people.sort((a, b) => a.name.localeCompare(b.name, 'ko'));
-  session = d.profile ? { role: d.profile.role, personId: d.profile.person_id } : { role: 'viewer', personId: null };
+  state.people = d.people.filter(p => p.session_id === sid).sort((a, b) => a.name.localeCompare(b.name, 'ko'));
+  state.evals = d.evals.filter(e => e.session_id === sid);
+  state.myEvals = new Map(state.evals
+    .filter(e => session.role === 'admin' ? e.evaluator_uid === myUid : (e.evaluator_person && e.evaluator_person === session.personId))
+    .map(e => [e.to_team, e]));
 }
 
 function isEditing() {
@@ -618,21 +734,43 @@ const canEditTeam = i => isAdmin() || (session.role === 'member' && myTeam() ===
 /* ---------- 렌더링 ---------- */
 function render() {
   document.body.dataset.role = session.role;
+  renderGate();
   renderChrome();
   renderNotice();
   renderRoster();
   renderBoard();
+  renderEval();
+}
+
+function renderGate() {
+  const show = !state.session;
+  $('#gate').style.display = show ? 'flex' : 'none';
+  if (!show) return;
+  $('#gateAltViewer').hidden = isAdmin();
+  // 관리자가 세션 없이 로그인한 상태면 가장 최근 세션을 자동 선택
+  if (isAdmin() && state.sessions.length && !autoPick) {
+    autoPick = true;
+    rpc('set_admin_session', { p_session: state.sessions[0].id })
+      .then(() => refresh(true))
+      .catch(e => toast('⚠ ' + errMsg(e)))
+      .finally(() => { autoPick = false; });
+  }
 }
 
 function renderChrome() {
+  document.querySelector('.wordmark small').textContent = state.session ? state.session.name : 'TEAM BOARD';
   const assigned = state.people.filter(p => p.team != null).length;
-  $('#uStats').textContent = `총 ${state.people.length}명 · 배정 ${assigned} · 미배정 ${state.people.length - assigned}`;
+  $('#uStats').textContent = state.session ? `총 ${state.people.length}명 · 배정 ${assigned} · 미배정 ${state.people.length - assigned}` : '';
   const p = me();
   $('#uRole').textContent =
     session.role === 'admin' ? '관리자 모드' :
     session.role === 'member' && p ? `${p.name} · ${p.team != null && state.teams[p.team] ? state.teams[p.team].name : '팀 미배정'}` :
-    '둘러보기 모드';
+    state.session ? '둘러보기 모드' : '';
   $('#uLogout').hidden = session.role === 'viewer';
+  $('#uSwitch').hidden = !state.session || isAdmin();
+  const sel = $('#sessSelect');
+  sel.replaceChildren(...state.sessions.map(s => el('option', { value: s.id }, s.name)));
+  if (state.session) sel.value = state.session.id;
   document.querySelectorAll('.chip-btn').forEach(b => b.classList.toggle('active', b.dataset.r === session.role));
 }
 
@@ -801,11 +939,22 @@ function teamInfo(t, i) {
 
   for (const [key, label] of [['ppt', 'PPT 링크'], ['link', '서비스']]) {
     if (edit) {
-      const inp = el('input', { class: 'pill', value: t[key] || '', placeholder: 'https://...' });
-      row(label, inp, makeSave(inp, async v => { await rpc('update_team_field', { p_idx: t.idx, p_field: key, p_value: v.trim() }); t[key] = v.trim(); }));
+      const inp = el('input', { class: 'pill', value: t[key] || '', placeholder: 'https://... 또는 도메인 (예: myapp.vercel.app)' });
+      const openBtn = el('button', { class: 'icon-btn', title: '링크 열기', onclick: () => {
+        const u = normalizeUrl(inp.value);
+        if (/^https?:\/\//.test(u)) window.open(u, '_blank', 'noopener');
+        else toast('열 수 있는 링크가 아닙니다');
+      } }, '↗');
+      row(label, inp, openBtn, makeSave(inp, async v => {
+        const nv = normalizeUrl(v);
+        await rpc('update_team_field', { p_idx: t.idx, p_field: key, p_value: nv });
+        t[key] = nv;
+        inp.value = nv;
+      }));
     } else {
-      row(label, /^https?:\/\//.test(t[key] || '')
-        ? el('a', { href: t[key], target: '_blank' }, t[key].replace(/^https?:\/\//, '').slice(0, 40) + (t[key].length > 48 ? '…' : ''))
+      const url = normalizeUrl(t[key] || '');
+      row(label, /^https?:\/\//.test(url)
+        ? el('a', { href: url, target: '_blank', rel: 'noopener' }, url.replace(/^https?:\/\//, '').slice(0, 40) + (url.length > 48 ? '…' : ''))
         : el('span', { class: 'none' }, t[key] || '—'));
     }
   }
@@ -828,15 +977,90 @@ function teamInfo(t, i) {
   } else if (t.memo) {
     row('메모', el('span', {}, t.memo));
   }
+
+  // 평가: 팀원은 다른 팀만, 관리자는 모든 팀. 결과는 관리자만 열람 (서버 RLS 강제)
+  const canEval = state.session && (isAdmin() || (session.role === 'member' && myTeam() != null && myTeam() !== i));
+  if (canEval) {
+    const mine = state.myEvals.get(i) || null;
+    const scoreAllowed = isAdmin() || state.session.evalOpen;
+    const sel = el('select', { class: 'pill' },
+      el('option', { value: '' }, '점수 —'),
+      Array.from({ length: 10 }, (_, k) => el('option', { value: String(k + 1) }, (k + 1) + '점')));
+    sel.value = mine && mine.score != null ? String(mine.score) : '';
+    if (!scoreAllowed) { sel.disabled = true; sel.title = '관리자가 평가를 열면 점수를 입력할 수 있습니다'; }
+    const ta = el('textarea', { class: 'pill', rows: 2, placeholder: '주관식 피드백 (선택)' }, mine ? mine.comment || '' : '');
+    const btn = el('button', { class: 'btn sm save-btn', disabled: true, onclick: async () => {
+      btn.disabled = true;
+      btn.textContent = '제출 중…';
+      try {
+        const score = sel.value ? +sel.value : null;
+        const comment = ta.value.trim();
+        await rpc('submit_evaluation', { p_to_team: t.idx, p_score: score, p_comment: comment });
+        btn.textContent = '✓ 제출됨';
+        toast(score == null && !comment ? '평가를 삭제했습니다' : '평가를 제출했습니다 — 관리자만 볼 수 있어요');
+        syncOk();
+      } catch (e) {
+        btn.textContent = '제출';
+        btn.disabled = false;
+        toast('⚠ 제출 실패: ' + errMsg(e));
+      }
+    } }, '제출');
+    const enable = () => { btn.disabled = false; btn.textContent = '제출'; };
+    sel.addEventListener('change', enable);
+    ta.addEventListener('input', enable);
+    row('평가', el('div', { class: 'evalbox' },
+      el('div', { class: 'erow' },
+        sel,
+        mine ? el('span', { class: 'eval-note' }, '제출됨 · 다시 제출하면 수정') : null,
+        btn),
+      ta,
+      !scoreAllowed ? el('div', { class: 'eval-note' }, '점수는 관리자가 평가를 연 동안에만 입력 가능 · 피드백은 지금도 제출할 수 있습니다') : null));
+  }
   return box;
 }
 
-/* ---------- PPT 파일 (Supabase Storage) ---------- */
+/* 평가 결과 (관리자 전용 섹션) */
+function renderEval() {
+  if (!isAdmin() || !state.session) return;
+  $('#btnEvalOpen').textContent = state.session.evalOpen ? '⏸ 평가 마감' : '▶ 평가 열기';
+  $('#btnEvalOpen').classList.toggle('primary', !state.session.evalOpen);
+  $('#evalSub').textContent = (state.session.evalOpen ? '진행 중 — 팀원들이 점수를 입력할 수 있습니다' : '닫힘 — 팀원 점수 입력 불가') + ` · 총 ${state.evals.length}건`;
+  const box = $('#evalResults');
+  box.replaceChildren();
+  state.teams.forEach((t, i) => {
+    const evs = state.evals.filter(e => e.to_team === i)
+      .sort((a, b) => (a.from_team ?? -1) - (b.from_team ?? -1));
+    const scores = evs.filter(e => e.score != null).map(e => e.score);
+    const avg = scores.length ? (scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(1) : null;
+    const block = el('div', { class: 'eval-team' },
+      el('div', { class: 'ehead' },
+        el('span', { class: 'dot', style: `background:${teamColor(i)}` }),
+        el('span', {}, t.name),
+        el('span', { class: 'escore' }, avg == null ? '—' : `평균 ${avg}점`),
+        el('span', { class: 'ecnt' }, `점수 ${scores.length}건 · 피드백 ${evs.filter(e => (e.comment || '').trim()).length}건`)));
+    for (const e of evs) {
+      const from = e.from_team == null
+        ? '관리자'
+        : `${state.teams[e.from_team] ? state.teams[e.from_team].name : (e.from_team + 1) + '조'} · ${(state.people.find(p => p.id === e.evaluator_person) || {}).name || '?'}`;
+      block.append(el('div', { class: 'eval-line' },
+        el('span', { class: 'from' }, from),
+        el('span', { class: 'pt' }, e.score != null ? e.score + '점' : '점수 없음'),
+        el('span', { class: 'tm' }, fmtDate(e.updated_at)),
+        (e.comment || '').trim() ? el('div', { class: 'cmt' }, e.comment) : null));
+    }
+    box.append(block);
+  });
+}
+
+/* ---------- PPT 파일 (Supabase Storage, 세션별 폴더) ---------- */
+const pptPath = idx => `${state.session.id}/team-${idx}/file`;
+
 async function uploadPpt(idx, file) {
+  if (!state.session) return;
   if (file.size > MAX_FILE_MB * 1048576) { toast(`⚠ ${MAX_FILE_MB}MB 이하 파일만 업로드할 수 있습니다`); return; }
   toast('업로드 중…');
   try {
-    const { error } = await sb.storage.from('ppt').upload(`team-${idx}/file`, file, {
+    const { error } = await sb.storage.from('ppt').upload(pptPath(idx), file, {
       upsert: true,
       contentType: file.type || 'application/octet-stream',
     });
@@ -847,14 +1071,15 @@ async function uploadPpt(idx, file) {
   } catch (e) { toast('⚠ 업로드 실패: ' + errMsg(e)); }
 }
 function downloadPpt(t) {
-  const { data } = sb.storage.from('ppt').getPublicUrl(`team-${t.idx}/file`, { download: t.pptFile.name });
+  const { data } = sb.storage.from('ppt').getPublicUrl(pptPath(t.idx), { download: t.pptFile.name });
   const url = data.publicUrl + '&v=' + encodeURIComponent(t.pptFile.at || '');
-  el('a', { href: url, download: t.pptFile.name }).click();
+  const a = el('a', { href: url, download: t.pptFile.name });
+  document.body.append(a); a.click(); a.remove();
 }
 async function deletePpt(t) {
   if (!await ask({ title: '파일 삭제', desc: `발표파일(${t.pptFile?.name || ''})을 삭제할까요?`, ok: '삭제' })) return;
   try {
-    const { error } = await sb.storage.from('ppt').remove([`team-${t.idx}/file`]);
+    const { error } = await sb.storage.from('ppt').remove([pptPath(t.idx)]);
     if (error) throw error;
     await rpc('set_team_file', { p_idx: t.idx, p_file: null });
     await refresh(true);
@@ -1008,6 +1233,15 @@ async function handleFile(file) {
 
 /* ---------- 내보내기 (관리자) ---------- */
 const csvEsc = s => { s = String(s ?? ''); return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+function saveCsv(rows, filename) {
+  const csv = '﻿' + rows.map(r => r.map(csvEsc).join(',')).join('\r\n');
+  const a = el('a', {
+    href: URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' })),
+    download: filename,
+  });
+  document.body.append(a); a.click(); a.remove();
+  URL.revokeObjectURL(a.href);
+}
 function downloadCsv() {
   const rows = [['팀', '이름', '소속', 'API 키', 'PPT 링크', '서비스 링크', '발표파일', '메모']];
   state.teams.forEach((t, i) => {
@@ -1018,14 +1252,25 @@ function downloadCsv() {
   for (const p of state.people.filter(p => p.team == null)) {
     rows.push(['미배정', p.name, p.dept, '', '', '', '', '']);
   }
-  const csv = '﻿' + rows.map(r => r.map(csvEsc).join(',')).join('\r\n');
-  const a = el('a', {
-    href: URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' })),
-    download: `팀배정_${new Date().toISOString().slice(0, 10)}.csv`,
-  });
-  a.click();
-  URL.revokeObjectURL(a.href);
+  saveCsv(rows, `팀배정_${new Date().toISOString().slice(0, 10)}.csv`);
   toast('CSV 다운로드 완료 (엑셀에서 열립니다)');
+}
+function downloadEvalCsv() {
+  const rows = [['대상 팀', '평가자 팀', '평가자', '점수', '피드백', '수정 시각']];
+  state.teams.forEach((t, i) => {
+    for (const e of state.evals.filter(e => e.to_team === i)) {
+      rows.push([
+        t.name,
+        e.from_team == null ? '관리자' : (state.teams[e.from_team] ? state.teams[e.from_team].name : ''),
+        e.from_team == null ? '관리자' : ((state.people.find(p => p.id === e.evaluator_person) || {}).name || ''),
+        e.score ?? '',
+        e.comment || '',
+        e.updated_at ? new Date(e.updated_at).toLocaleString('ko-KR') : '',
+      ]);
+    }
+  });
+  saveCsv(rows, `평가_${new Date().toISOString().slice(0, 10)}.csv`);
+  toast('평가 CSV 다운로드 완료');
 }
 
 function copySummary() {
@@ -1093,8 +1338,7 @@ async function authSubmit() {
 function openMember() {
   if (authError) { toast('⚠ ' + authError); return; }
   $('#nameList').replaceChildren(...state.people.map(p => el('option', { value: p.name })));
-  $('#fCode').hidden = !state.accessCodeRequired;
-  $('#memberName').value = $('#memberCode').value = '';
+  $('#memberName').value = '';
   $('#memberErr').textContent = '';
   $('#dlgMember').showModal();
   $('#memberName').focus();
@@ -1102,11 +1346,44 @@ function openMember() {
 async function memberSubmit() {
   const err = $('#memberErr');
   try {
-    await rpc('member_login', { p_name: $('#memberName').value.trim(), p_code: $('#memberCode').value || null });
+    await rpc('member_login', { p_name: $('#memberName').value.trim() });
     $('#dlgMember').close();
     await refresh(true);
     const p = me();
     toast(p ? `${p.name}님, ${state.teams[p.team]?.name || ''} 팀원 모드입니다.` : '팀원 모드입니다.');
+  } catch (e) { err.textContent = errMsg(e); }
+}
+
+/* ---------- 세션 입장/관리 ---------- */
+async function gateEnter() {
+  const code = $('#gateCode').value.trim();
+  if (!code) return;
+  $('#gateErr').textContent = '';
+  try {
+    if (authError) throw new Error(authError);
+    const name = await rpc('enter_session', { p_code: code });
+    $('#gateCode').value = '';
+    await refresh(true);
+    toast(`'${name}'에 입장했습니다`);
+  } catch (e) { $('#gateErr').textContent = errMsg(e); }
+}
+
+function openSessionDialog() {
+  $('#sessName').value = $('#sessCode').value = '';
+  $('#sessErr').textContent = '';
+  $('#dlgSession').showModal();
+  $('#sessName').focus();
+}
+async function sessionCreate() {
+  const name = $('#sessName').value.trim();
+  const code = $('#sessCode').value.trim();
+  const err = $('#sessErr');
+  if (!name || !code) { err.textContent = '교육명과 입장 코드를 모두 입력하세요.'; return; }
+  try {
+    await rpc('create_session', { p_name: name, p_code: code });
+    $('#dlgSession').close();
+    await refresh(true);
+    toast(`새 교육 '${name}'을(를) 만들었습니다 — 입장 코드: ${code}`);
   } catch (e) { err.textContent = errMsg(e); }
 }
 
@@ -1157,17 +1434,68 @@ $('#teamCount').addEventListener('change', e => {
 });
 $('#btnCsv').addEventListener('click', downloadCsv);
 $('#btnCopy').addEventListener('click', copySummary);
-$('#btnCode').addEventListener('click', async () => {
+
+/* 게이트 */
+$('#gateEnter').addEventListener('click', gateEnter);
+$('#gateCode').addEventListener('keydown', e => { if (e.key === 'Enter') gateEnter(); });
+$('#gateAdminBtn').addEventListener('click', () => openAuth(state.adminSet ? 'login' : 'setup'));
+$('#gateNewSession').addEventListener('click', openSessionDialog);
+$('#uSwitch').addEventListener('click', async () => {
+  const code = await ask({ title: '세션 변경', desc: '다른 교육의 입장 코드를 입력하세요.', input: { placeholder: '입장 코드' }, ok: '입장' });
+  if (!code || !code.trim()) return;
+  act(() => rpc('enter_session', { p_code: code.trim() }), r => `'${r}'에 입장했습니다`);
+});
+
+/* 세션 관리 (관리자) */
+$('#sessSelect').addEventListener('change', e => act(() => rpc('set_admin_session', { p_session: e.target.value })));
+$('#btnNewSession').addEventListener('click', openSessionDialog);
+$('#sessOk').addEventListener('click', sessionCreate);
+$('#sessCancel').addEventListener('click', () => $('#dlgSession').close());
+$('#dlgSession').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); sessionCreate(); } });
+$('#btnSessCode').addEventListener('click', async () => {
+  if (!state.session) return;
+  let cur = '';
+  try {
+    const { data } = await sb.from('session_codes').select('code').eq('session_id', state.session.id).maybeSingle();
+    cur = data ? data.code : '';
+  } catch (e) { /* 코드 조회 실패해도 새로 설정은 가능 */ }
   const code = await ask({
-    title: '참여코드',
-    desc: `팀원 로그인에 필요한 코드입니다. 현재: ${state.accessCodeRequired ? '설정됨' : '없음'} — 비워두고 저장하면 해제됩니다.`,
-    input: { placeholder: '예: skku2026' },
+    title: '입장코드',
+    desc: '학생들은 이 코드로 세션에 입장합니다. 바꾸면 새 코드만 유효합니다.',
+    input: { value: cur, placeholder: '예: july-ai' },
     ok: '저장',
   });
-  if (code === null) return;
-  act(() => rpc('set_access_code', { p_code: code.trim() }),
-      code.trim() ? '참여코드가 설정되었습니다. 학생들에게 공유하세요.' : '참여코드를 해제했습니다.');
+  if (code == null) return;
+  if (!code.trim()) { toast('⚠ 코드는 비울 수 없습니다'); return; }
+  act(() => rpc('set_session_code', { p_code: code.trim() }), '입장코드를 저장했습니다. 학생들에게 공유하세요.');
 });
+$('#btnSessRename').addEventListener('click', async () => {
+  if (!state.session) return;
+  const name = await ask({ title: '교육명 변경', desc: '', input: { value: state.session.name, placeholder: '교육명' }, ok: '저장' });
+  if (name == null || !name.trim()) return;
+  act(() => rpc('rename_session', { p_name: name.trim() }), '교육명을 변경했습니다');
+});
+$('#btnSessDelete').addEventListener('click', async () => {
+  if (!state.session) return;
+  const ok = await ask({
+    title: '세션 삭제',
+    desc: `'${state.session.name}' 세션의 명단·팀·평가 데이터가 모두 삭제됩니다. 되돌릴 수 없습니다.`,
+    ok: '삭제',
+  });
+  if (!ok) return;
+  const sid = state.session.id;
+  try { await sb.storage.from('ppt').remove(Array.from({ length: 15 }, (_, i) => `${sid}/team-${i}/file`)); } catch (e) {}
+  act(() => rpc('delete_session'), '세션을 삭제했습니다');
+});
+
+/* 평가 (관리자) */
+$('#btnEvalOpen').addEventListener('click', () => {
+  if (!state.session) return;
+  const opening = !state.session.evalOpen;
+  act(() => rpc('set_eval_open', { p_open: opening }),
+      opening ? '평가를 열었습니다 — 이제 팀원들이 점수를 입력할 수 있습니다' : '평가를 마감했습니다');
+});
+$('#btnEvalCsv').addEventListener('click', downloadEvalCsv);
 
 const dz = $('#dropzone');
 dz.addEventListener('click', () => $('#fileInput').click());
