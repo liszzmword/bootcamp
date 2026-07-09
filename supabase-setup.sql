@@ -38,10 +38,12 @@ create table if not exists public.people (
   session_id uuid not null references public.sessions(id) on delete cascade,
   name text not null,
   dept text not null default '',
+  student_no text not null default '',
   team int,
   pin int,
   created_at timestamptz not null default now()
 );
+alter table public.people add column if not exists student_no text not null default '';
 
 create table if not exists public.teams (
   session_id uuid not null references public.sessions(id) on delete cascade,
@@ -210,9 +212,17 @@ drop policy if exists session_codes_read on public.session_codes;
 create policy session_codes_read on public.session_codes for select
   using (public.is_admin());
 
+-- 명단 직접 조회는 차단하고 뷰로만 읽게 함: 학번은 관리자에게만 노출
+-- (세션 참가자가 남의 학번을 조회해 그 계정으로 로그인하는 것을 방지)
 drop policy if exists people_read on public.people;
-create policy people_read on public.people for select
-  using (public.is_admin() or session_id = public.my_session());
+drop view if exists public.people_view;
+create view public.people_view with (security_barrier) as
+  select id, session_id, name, dept,
+         case when public.is_admin() then student_no else '' end as student_no,
+         team, pin, created_at
+  from public.people
+  where public.is_admin() or session_id = public.my_session();
+grant select on public.people_view to anon, authenticated;
 
 drop policy if exists teams_read on public.teams;
 create policy teams_read on public.teams for select
@@ -289,20 +299,47 @@ begin
   return v_name;
 end $$;
 
--- 팀원 로그인: 참여코드 + 그 세션 명단의 이름 (코드는 서버가 검증)
-drop function if exists public.member_login(text);  -- 구버전(코드 없는 시그니처) 제거
-create or replace function public.member_login(p_name text, p_code text) returns uuid
+-- 팀원 입장: 참여코드 + 학번 + 이름 (코드는 서버가 검증)
+-- 명단에 있으면 매칭해 로그인, 없으면 자동 등록(팀 미배정). 팀 배정은 관리자가.
+drop function if exists public.member_login(text);        -- 구버전 시그니처들 제거
+drop function if exists public.member_login(text, text);
+create or replace function public.member_enter(p_name text, p_student_no text, p_code text) returns uuid
 language plpgsql security definer set search_path = public as $$
-declare per public.people%rowtype; v_sid uuid; h text;
+declare per public.people%rowtype; v_sid uuid; h text; v_name text; v_sno text;
 begin
   if auth.uid() is null then raise exception 'NOT_AUTHENTICATED'; end if;
   v_sid := public.my_session();
   if v_sid is null then raise exception 'NO_SESSION'; end if;
   select code into h from session_codes where session_id = v_sid;
   if h is null or lower(h) <> lower(trim(coalesce(p_code, ''))) then raise exception 'BAD_CODE'; end if;
-  select * into per from people where session_id = v_sid and name = trim(p_name);
-  if not found then raise exception 'NO_NAME'; end if;
-  if per.team is null then raise exception 'NO_TEAM'; end if;
+  v_name := trim(coalesce(p_name, ''));
+  v_sno := trim(coalesce(p_student_no, ''));
+  if v_name = '' then raise exception 'NO_NAME'; end if;
+  if v_sno = '' then raise exception 'NO_SNO'; end if;
+
+  -- 1) 학번 일치 → 이름 확인 후 로그인 (동명이인 자동 접미사 '이름(1234)'도 허용)
+  select * into per from people
+  where session_id = v_sid and student_no = v_sno
+  order by created_at limit 1;
+  if found then
+    if per.name <> v_name and per.name not like v_name || '(%' then raise exception 'BAD_MATCH'; end if;
+  else
+    -- 2) 이름 일치 + 학번 미기록(관리자가 학번 없이 올린 명단) → 학번을 붙이고 로그인
+    select * into per from people
+    where session_id = v_sid and name = v_name and student_no = ''
+    order by created_at limit 1;
+    if found then
+      update people set student_no = v_sno where id = per.id;
+    else
+      -- 3) 신규 자동 등록. 동명이인이 있으면 학번 끝 4자리로 구분
+      if exists (select 1 from people where session_id = v_sid and name = v_name) then
+        v_name := v_name || '(' || right(v_sno, 4) || ')';
+      end if;
+      insert into people (session_id, name, dept, student_no) values (v_sid, v_name, '', v_sno)
+      returning * into per;
+    end if;
+  end if;
+
   insert into profiles (uid, role, person_id, session_id) values (auth.uid(), 'member', per.id, v_sid)
   on conflict (uid) do update set role = 'member', person_id = per.id, session_id = v_sid;
   return per.id;
@@ -395,11 +432,12 @@ begin
   select count(*) into v_kept from people
   where session_id = v_sid and name in (select x->>'name' from jsonb_array_elements(p_people) x);
 
-  for rec in select x->>'name' as name, coalesce(x->>'dept', '') as dept
+  for rec in select x->>'name' as name, coalesce(x->>'dept', '') as dept, coalesce(x->>'sno', '') as sno
              from jsonb_array_elements(p_people) x loop
-    insert into people (session_id, name, dept) values (v_sid, rec.name, rec.dept)
+    insert into people (session_id, name, dept, student_no) values (v_sid, rec.name, rec.dept, rec.sno)
     on conflict (session_id, name) do update
-      set dept = case when excluded.dept <> '' then excluded.dept else people.dept end;
+      set dept = case when excluded.dept <> '' then excluded.dept else people.dept end,
+          student_no = case when excluded.student_no <> '' then excluded.student_no else people.student_no end;
   end loop;
 
   delete from people
@@ -409,7 +447,8 @@ begin
   return jsonb_build_object('kept', v_kept, 'added', v_total - v_kept, 'removed', v_removed);
 end $$;
 
-create or replace function public.add_person(p_name text, p_dept text default '') returns void
+drop function if exists public.add_person(text, text);  -- 학번 파라미터 추가로 시그니처 변경
+create or replace function public.add_person(p_name text, p_dept text default '', p_student_no text default '') returns void
 language plpgsql security definer set search_path = public as $$
 declare v_sid uuid;
 begin
@@ -417,7 +456,8 @@ begin
   v_sid := public.my_session();
   if v_sid is null then raise exception 'NO_SESSION'; end if;
   if trim(coalesce(p_name, '')) = '' then raise exception 'NO_NAME'; end if;
-  insert into people (session_id, name, dept) values (v_sid, trim(p_name), coalesce(p_dept, ''));
+  insert into people (session_id, name, dept, student_no)
+  values (v_sid, trim(p_name), coalesce(p_dept, ''), trim(coalesce(p_student_no, '')));
 end $$;
 
 create or replace function public.remove_person(p_id uuid) returns void

@@ -5,7 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#111111">
 <title>BOOTCAMP TEAM BOARD</title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎯</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Jost:wght@500;700&display=swap" rel="stylesheet">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%23111111'/><text x='50' y='70' font-size='56' font-family='sans-serif' font-weight='700' fill='white' text-anchor='middle'>B</text></svg>">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
 <style>
@@ -16,8 +19,8 @@
     --charcoal: #39393b; --mute: #707072; --stone: #9e9ea0;
     --hairline: #cacacb; --hairline-soft: #e5e5e5;
     --sale: #d30005; --success: #007d48; --info: #1151ff;
-    --font-ui: "Helvetica Neue", -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", Arial, sans-serif;
-    --font-display: "Futura", "Avenir Next Condensed", "Arial Narrow", -apple-system, "Apple SD Gothic Neo", sans-serif;
+    --font-ui: "Inter", "Helvetica Neue", -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", Arial, sans-serif;
+    --font-display: "Jost", "Futura", "Avenir Next Condensed", -apple-system, "Apple SD Gothic Neo", sans-serif;
     --r-md: 24px; --r-pill: 30px;
   }
   * { box-sizing: border-box; margin: 0; }
@@ -27,12 +30,17 @@
     height: 100vh; display: flex; flex-direction: column; overflow: hidden;
   }
   body:not([data-role="admin"]) .admin-only { display: none !important; }
+  a { color: var(--ink); }
+  a:hover, .utility-bar button:hover { opacity: .6; }
+  button svg, .btn svg, .icon-btn svg { flex-shrink: 0; }
 
   .utility-bar {
-    background: var(--cloud); height: 36px; flex-shrink: 0;
-    display: flex; align-items: center; gap: 10px; padding: 0 24px;
+    background: var(--cloud); min-height: 36px; flex-shrink: 0;
+    display: flex; flex-wrap: wrap; align-items: center; gap: 2px 10px; padding: 2px 24px;
     font-size: 12px; font-weight: 500;
   }
+  .utility-bar button, .utility-bar span { white-space: nowrap; }
+  .utility-bar button { flex-shrink: 0; }
   .utility-bar .spacer { flex: 1; }
   .utility-bar button {
     background: none; border: none; font: inherit; cursor: pointer; color: var(--ink);
@@ -61,22 +69,29 @@
     background: var(--canvas); color: var(--ink); border: 1px solid var(--hairline);
     border-radius: var(--r-pill); padding: 8px 16px; height: 40px;
   }
+  .chip-btn:not(.active):hover { background: var(--cloud); }
   .chip-btn.active { background: var(--ink); color: var(--canvas); border-color: var(--ink); }
 
   .btn {
     font: inherit; font-size: 14px; font-weight: 500; cursor: pointer;
     border: none; border-radius: var(--r-pill); padding: 0 24px; height: 44px;
     background: var(--cloud); color: var(--ink); white-space: nowrap;
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    transition: background .15s, transform .12s;
   }
   .btn.primary { background: var(--ink); color: var(--canvas); }
-  .btn:active { opacity: .5; }
+  .btn:hover { background: #e8e8e8; }
+  .btn.primary:hover { background: #2b2b2b; }
+  .btn:active { transform: scale(.97); }
   .btn:disabled { opacity: .4; cursor: default; }
   .btn.sm { height: 34px; padding: 0 16px; font-size: 13px; }
   .icon-btn {
     width: 34px; height: 34px; border-radius: 9999px; border: none; cursor: pointer;
     background: var(--cloud); color: var(--ink); font-size: 14px; flex-shrink: 0;
   }
-  .icon-btn:active { opacity: .5; }
+  .icon-btn { display: inline-flex; align-items: center; justify-content: center; transition: background .15s, transform .12s; }
+  .icon-btn:hover { background: #e8e8e8; }
+  .icon-btn:active { transform: scale(.92); }
   input.pill, select.pill, textarea.pill {
     font: inherit; font-size: 14px; border: none; background: var(--cloud); color: var(--ink);
     border-radius: var(--r-md); padding: 8px 16px; height: 40px;
@@ -132,7 +147,7 @@
   .notice { background: var(--ink); color: var(--canvas); padding: 40px 40px 32px; position: relative; }
   .notice .kicker {
     font-family: var(--font-display); font-weight: 700; text-transform: uppercase;
-    font-size: 56px; line-height: .9; letter-spacing: 1px; margin-bottom: 16px;
+    font-size: 44px; line-height: .9; letter-spacing: 1px; margin-bottom: 16px;
   }
   .notice .body { font-size: 16px; line-height: 1.6; white-space: pre-wrap; max-width: 720px; }
   .notice .body.empty { color: var(--stone); }
@@ -160,7 +175,7 @@
   .pool.dragover { outline: 2px solid var(--ink); }
   .members { display: flex; flex-wrap: wrap; gap: 8px; align-content: flex-start; }
 
-  #teamsGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 8px; padding-bottom: 24px; align-items: start; }
+  #teamsGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 8px; padding-bottom: 24px; }
   .team-card { background: var(--canvas); border: 1px solid var(--hairline-soft); display: flex; flex-direction: column; }
   .team-card.dragover { outline: 2px solid var(--ink); outline-offset: -1px; }
   .team-card.mine { border: 2px solid var(--ink); }
@@ -168,11 +183,12 @@
   .team-head .tname {
     font-family: var(--font-display); font-weight: 700; font-size: 18px; letter-spacing: .5px;
     text-transform: uppercase; border: none; background: none; padding: 0; min-width: 0; flex: 1;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   }
   .team-head input.tname:focus { outline: none; border-bottom: 2px solid var(--ink); }
   .team-head .cnt { font-size: 12px; font-weight: 500; color: var(--mute); white-space: nowrap; }
   .mytag { font-size: 10px; font-weight: 700; letter-spacing: 1.5px; background: var(--ink); color: var(--canvas); padding: 3px 10px; border-radius: var(--r-pill); }
-  .team-card .members { padding: 0 16px 14px; min-height: 36px; }
+  .team-card .members { padding: 0 16px 14px; min-height: 74px; flex: 1; align-content: flex-start; }
 
   .pchip {
     display: inline-flex; align-items: center; gap: 6px;
@@ -187,18 +203,30 @@
   .pchip .out { cursor: pointer; color: inherit; opacity: .5; padding: 0 2px; }
   .pchip .out:hover { opacity: 1; }
 
-  .tinfo { border-top: 1px solid var(--hairline-soft); }
-  .tinfo .irow { display: flex; align-items: center; gap: 10px; padding: 10px 16px; border-bottom: 1px solid var(--hairline-soft); }
+  .tinfo { border-top: 1px solid var(--hairline-soft); margin-top: auto; }
+  .team-card.clickable { cursor: pointer; transition: border-color .15s; }
+  .team-card.clickable:hover { border-color: var(--hairline); }
+  dialog.team-dlg { width: 480px; }
+  .team-dlg .tinfo { border-top: 1px solid var(--hairline-soft); }
+  .team-dlg .tinfo .irow { padding: 12px 4px; }
+  .team-dlg .tinfo .ival > a { white-space: normal; overflow-wrap: anywhere; }
+  .team-dlg .memo-view { white-space: pre-wrap; overflow-wrap: anywhere; text-overflow: clip; }
+  .team-dlg .fb-list { max-height: 240px; }
+  .team-dlg .fb-item { white-space: pre-wrap; overflow-wrap: anywhere; text-overflow: clip; }
+  .tinfo .irow { display: flex; align-items: center; gap: 10px; padding: 10px 16px; min-height: 45px; border-bottom: 1px solid var(--hairline-soft); }
   .tinfo .irow:last-child { border-bottom: none; }
   .tinfo .ilabel { width: 74px; flex-shrink: 0; font-size: 12px; font-weight: 500; color: var(--mute); }
-  .tinfo .ival { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; font-size: 13px; flex-wrap: wrap; overflow-wrap: anywhere; }
-  .tinfo .memo-view { white-space: pre-wrap; overflow-wrap: anywhere; min-width: 0; }
+  .tinfo .ival { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; font-size: 13px; flex-wrap: wrap; overflow: hidden; }
+  .tinfo .ival > a, .tinfo .apival { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; min-width: 0; }
+  .tinfo .memo-view { min-width: 0; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .tinfo input.pill { height: 34px; font-size: 13px; flex: 1 1 140px; width: auto; min-width: 0; padding: 5px 14px; }
   .tinfo textarea.pill { font-size: 13px; width: 100%; }
   .save-btn { flex-shrink: 0; }
   .save-btn:disabled { background: var(--cloud); color: var(--stone); }
+  .save-btn.saved, .save-btn.saved:disabled { background: none; color: var(--success); opacity: 1; }
+  .pchip .pinbtn { display: inline-flex; }
   .tinfo .irow:has(textarea) .save-btn { margin-left: auto; }
-  .tinfo a { color: var(--ink); font-weight: 500; text-decoration: underline; text-underline-offset: 3px; word-break: break-all; }
+  .tinfo a { color: var(--ink); font-weight: 500; text-decoration: underline; text-underline-offset: 3px; }
   .tinfo .none { color: var(--stone); }
   .tinfo .apival { font-family: ui-monospace, Menlo, monospace; font-size: 12px; word-break: break-all; }
   .file-pill {
@@ -282,12 +310,17 @@
 
   /* 평가 입력 (팀 카드 안) — 점수는 인라인, 피드백은 팝업 */
   .evalbox { display: flex; flex-direction: column; gap: 6px; width: 100%; min-width: 0; }
-  .evalbox .erow { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .evalbox .erow { display: flex; gap: 8px; align-items: center; }
   .evalbox select.pill { height: 34px; font-size: 13px; padding: 5px 12px; }
   .eval-note { font-size: 11px; color: var(--stone); overflow-wrap: anywhere; }
 
-  /* 팀원 이름 선택 목록 */
-  #memberList { display: flex; flex-wrap: wrap; gap: 6px; max-height: 220px; overflow-y: auto; margin: 4px 0 10px; }
+  /* 점수 상세 팝업 (관리자) */
+  #dlgScores { width: 440px; }
+  #scList { max-height: 320px; overflow-y: auto; margin-bottom: 8px; }
+  .eval-team.clickable { cursor: pointer; }
+  .eval-team.clickable:hover { background: var(--cloud); }
+
+  /* 세션 선택 칩 (QR 팝업) */
   .name-pick {
     font: inherit; font-size: 13px; font-weight: 500; cursor: pointer;
     background: var(--canvas); border: 1px solid var(--hairline); border-radius: var(--r-pill); padding: 7px 14px;
@@ -303,10 +336,10 @@
   #qrLink { font-size: 11px; color: var(--mute); word-break: break-all; margin-bottom: 8px; }
 
   /* 공개 피드백 (팀 카드 안, 익명) */
-  .fb-list { display: flex; flex-direction: column; gap: 6px; width: 100%; max-height: 180px; overflow-y: auto; }
+  .fb-list { display: flex; flex-direction: column; gap: 6px; width: 100%; max-height: 74px; overflow-y: auto; }
   .fb-item {
-    background: var(--cloud); border-radius: 12px; padding: 8px 12px;
-    font-size: 12.5px; line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere;
+    background: var(--cloud); border-radius: 12px; padding: 3px 12px;
+    font-size: 12.5px; line-height: 1.5; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
 
   /* 평가 결과 (관리자 섹션) */
@@ -326,7 +359,7 @@
     body { overflow: auto; height: auto; }
     .layout { flex-direction: column; }
     aside { width: 100%; max-height: 50vh; border-right: none; border-bottom: 1px solid var(--hairline); }
-    .notice .kicker { font-size: 40px; }
+    .notice .kicker { font-size: 36px; }
     .primary-nav { height: auto; padding: 10px 16px; flex-wrap: wrap; gap: 10px; }
     main { padding: 16px 16px 0; }
     .section-head { margin-top: 32px; }
@@ -334,14 +367,14 @@
 
   /* 모바일(폰) — 학생들이 팀 확인·링크 등록·공지 열람하는 주 화면 */
   @media (max-width: 640px) {
-    .utility-bar { height: auto; min-height: 36px; flex-wrap: wrap; padding: 6px 14px; row-gap: 2px; }
+    .utility-bar { padding: 4px 14px; }
     .primary-nav { padding: 10px 14px; }
     .wordmark { font-size: 18px; }
     .role-chips { gap: 6px; margin-left: 0; }
     .chip-btn { height: 38px; padding: 6px 13px; font-size: 13px; }
     main { padding: 12px 12px 0; }
     .notice { padding: 24px 20px 22px; }
-    .notice .kicker { font-size: 34px; margin-bottom: 12px; }
+    .notice .kicker { font-size: 30px; margin-bottom: 12px; }
     .notice .body { font-size: 15px; }
     .notice .edit-btn { position: static; margin-top: 14px; }
     .section-head { font-size: 20px; margin: 28px 0 10px; }
@@ -384,13 +417,13 @@
     <button class="btn primary" id="gateEnter">입장</button>
     <div class="err" id="gateErr"></div>
     <div class="alt" id="gateAltViewer">운영자이신가요? <button id="gateAdminBtn">관리자 로그인</button></div>
-    <div class="alt admin-only">관리자 모드입니다. 코드로 입장하거나 <button id="gateNewSession">＋ 새 교육 만들기</button></div>
+    <div class="alt admin-only">관리자 모드입니다. 코드로 입장하거나 <button id="gateNewSession">+ 새 교육 만들기</button></div>
   </div>
 </div>
 
 <div class="utility-bar">
   <select id="sessSelect" class="admin-only" title="교육 세션 전환"></select>
-  <button id="btnNewSession" class="admin-only">＋새 교육</button>
+  <button id="btnNewSession" class="admin-only">+ 새 교육</button>
   <button id="btnQr" class="admin-only">QR·참여코드</button>
   <button id="btnSessRename" class="admin-only">이름변경</button>
   <button id="btnSessDelete" class="admin-only">세션 삭제</button>
@@ -420,7 +453,7 @@
       <input type="file" id="fileInput" accept=".xlsx,.xls,.csv,.txt" hidden>
       <div class="roster-tools">
         <button class="btn sm" id="btnPaste" style="flex:1">이름 붙여넣기</button>
-        <button class="icon-btn" id="btnClearAll" title="명단 전체 삭제">🗑</button>
+        <button class="icon-btn" id="btnClearAll" title="명단 전체 삭제"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"></path><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>
       </div>
       <textarea id="pasteArea" class="pill" rows="4" placeholder="한 줄에 한 명씩 (엑셀 표 복사-붙여넣기 가능)"></textarea>
       <button class="btn sm primary" id="btnApplyPaste" style="display:none;width:100%;margin-top:8px">적용</button>
@@ -456,14 +489,14 @@
     <div class="admin-only">
       <div class="section-head">Assign <span class="sub">관리자 전용</span></div>
       <div class="toolbar">
-        <button class="btn primary" id="btnRandom">🎲 랜덤 배정</button>
+        <button class="btn primary" id="btnRandom"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 18h1.4c1.3 0 2.5-.6 3.3-1.7l6.6-8.6c.8-1.1 2-1.7 3.3-1.7H22"></path><path d="m18 2 4 4-4 4"></path><path d="M2 6h1.9c1.5 0 2.9.9 3.6 2.2"></path><path d="M22 18h-5.9c-1.4 0-2.7-.7-3.5-1.8l-.3-.5"></path><path d="m18 14 4 4-4 4"></path></svg>랜덤 배정</button>
         <span class="count-pill">팀 수 <input type="number" id="teamCount" min="1" max="15"></span>
         <button class="btn" id="btnReset">배정 초기화</button>
         <span class="group-gap"></span>
         <button class="btn" id="btnCsv">CSV 다운로드</button>
         <button class="btn" id="btnCopy">결과 복사</button>
       </div>
-      <div class="hint">이름 칩을 드래그해 팀 이동(자동 고정 📌) · 📌 클릭으로 고정 해제 · 랜덤 배정은 고정 인원을 제외하고 섞습니다</div>
+      <div class="hint">이름 칩을 드래그해 팀 이동(자동 고정) · 핀 클릭으로 고정 해제 · 랜덤 배정은 고정 인원을 제외하고 섞습니다</div>
       <div class="section-head" style="font-size:16px">Unassigned <span class="sub" id="unCnt"></span></div>
       <div class="pool" id="unassigned"><div class="members"></div></div>
 
@@ -472,7 +505,7 @@
         <button class="btn" id="btnEvalOpen"></button>
         <button class="btn" id="btnEvalCsv">평가 CSV</button>
       </div>
-      <div class="hint">점수(1~10)는 [평가 열기]를 누른 동안에만 팀원이 입력할 수 있고 결과는 관리자만 봅니다. 주관식 피드백은 언제든 제출 가능하며 해당 팀 카드에 익명으로 공개됩니다. 관리자는 항상 평가할 수 있습니다.</div>
+      <div class="hint">총점 100 = 심사위원(관리자) 90% + 학생 10% — 각 평균(1~10)을 90점/10점 만점으로 환산해 합산합니다. 점수는 [평가 열기]를 누른 동안에만 팀원이 입력할 수 있고 결과는 관리자만 봅니다(팀 블록을 클릭하면 개별 점수 팝업). 주관식 피드백은 언제든 제출 가능하며 팀 카드에 익명으로 공개됩니다.</div>
       <div id="evalResults"></div>
     </div>
 
@@ -505,13 +538,23 @@
 
 <dialog id="dlgMember">
   <h2>Team Login</h2>
-  <div class="desc">참여코드를 입력하고, 명단에서 <b>본인 이름을 클릭</b>하세요. 본인 조의 링크·파일 관리와 다른 팀 평가를 할 수 있습니다.</div>
+  <div class="desc">참여코드와 <b>학번·이름</b>을 입력하세요. 명단에 없으면 자동으로 등록됩니다 (팀 배정은 관리자가 합니다).</div>
   <div class="field"><input id="memberCode" class="pill" placeholder="참여코드" autocomplete="off"></div>
-  <div class="field"><input id="memberFilter" class="pill" placeholder="이름 검색"></div>
-  <div id="memberList"></div>
+  <div class="field"><input id="memberSno" class="pill" placeholder="학번" autocomplete="off"></div>
+  <div class="field"><input id="memberName" class="pill" placeholder="이름" autocomplete="off"></div>
   <div class="err" id="memberErr"></div>
   <div class="actions">
     <button class="btn sm" id="memberCancel">둘러보기로 계속</button>
+    <button class="btn sm primary" id="memberOk">입장</button>
+  </div>
+</dialog>
+
+<dialog id="dlgScores">
+  <h2 id="scTitle">평가 상세</h2>
+  <div class="desc" id="scSummary"></div>
+  <div id="scList"></div>
+  <div class="actions">
+    <button class="btn sm primary" id="scClose">닫기</button>
   </div>
 </dialog>
 
@@ -549,6 +592,15 @@
   <div class="actions">
     <button class="btn sm" id="sessCancel">취소</button>
     <button class="btn sm primary" id="sessOk">만들기</button>
+  </div>
+</dialog>
+
+<dialog id="dlgTeam" class="team-dlg">
+  <h2 id="teamDlgTitle"></h2>
+  <div class="desc" id="teamDlgSub"></div>
+  <div id="teamDlgBody"></div>
+  <div class="actions">
+    <button class="btn sm primary" id="teamDlgClose">닫기</button>
   </div>
 </dialog>
 
@@ -596,6 +648,7 @@ let filterText = '';
 let uploadTarget = null;
 let lastSnap = '';
 let autoPick = false;                     // 관리자 세션 자동 선택 중복 방지
+let adminIntent = false;                  // URL에 #admin이 있을 때만 관리자 진입점 노출
 let joinCode = '';                        // 이 브라우저에서 마지막으로 쓴 참여코드 (팀원 로그인에 재사용)
 try { joinCode = localStorage.getItem('joinCode') || ''; } catch (e) {}
 function saveJoinCode(code) {
@@ -613,6 +666,24 @@ function el(tag, attrs = {}, ...children) {
   }
   for (const c of children.flat(9)) if (c != null) n.append(c);
   return n;
+}
+const ICONS = {
+  pin: '<path d="M12 17v5"/><path d="M9 10.8V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v5.8l2 2.2H7l2-2.2Z"/>',
+  x: '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
+  copy: '<rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>',
+  open: '<path d="M7 17 17 7"/><path d="M8 7h9v9"/>',
+  file: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/>',
+  check: '<path d="M20 6 9 17l-5-5"/>',
+};
+function icon(name, size = 14) {
+  const s = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  s.setAttribute('viewBox', '0 0 24 24');
+  s.setAttribute('width', size); s.setAttribute('height', size);
+  s.setAttribute('fill', 'none'); s.setAttribute('stroke', 'currentColor');
+  s.setAttribute('stroke-width', '1.5'); s.setAttribute('stroke-linecap', 'round'); s.setAttribute('stroke-linejoin', 'round');
+  s.innerHTML = ICONS[name];
+  s.style.flexShrink = '0'; s.style.verticalAlign = '-2px';
+  return s;
 }
 let toastTimer;
 function toast(msg) {
@@ -671,7 +742,9 @@ const ERR_MAP = {
   BAD_SESSION: '세션을 찾을 수 없습니다.',
   CODE_TAKEN: '다른 교육에서 이미 쓰는 코드입니다. 다른 코드를 정하세요.',
   EMPTY_CODE: '코드를 입력하세요.',
-  NO_NAME: '명단에 없는 이름입니다.',
+  NO_NAME: '이름을 입력하세요.',
+  NO_SNO: '학번을 입력하세요.',
+  BAD_MATCH: '학번과 이름이 일치하지 않습니다. 관리자에게 문의하세요.',
   NO_TEAM: '아직 팀이 배정되지 않았습니다. 관리자에게 문의하세요.',
   OWN_TEAM: '자기 팀은 평가할 수 없습니다.',
   EVAL_CLOSED: '관리자가 평가를 연 동안에만 점수를 줄 수 있습니다.',
@@ -710,7 +783,7 @@ async function rpc(fn, args) {
 async function fetchAll() {
   const [se, pe, te, sec, st, pr, ev, fb] = await Promise.all([
     sb.from('sessions').select('*').order('created_at', { ascending: false }),
-    sb.from('people').select('id,session_id,name,dept,team,pin'),
+    sb.from('people_view').select('id,session_id,name,dept,student_no,team,pin'),
     sb.from('teams').select('session_id,idx,name,ppt,link,memo,ppt_file').order('idx'),
     sb.from('team_secrets').select('session_id,idx,api'),
     sb.from('settings').select('*').eq('id', 1).single(),
@@ -779,7 +852,7 @@ async function act(fn, okMsg) {
     await refresh(true);
     if (okMsg) toast(typeof okMsg === 'function' ? okMsg(r) : okMsg);
   } catch (e) {
-    toast('⚠ ' + errMsg(e));
+    toast('' + errMsg(e));
     refresh(true);
   }
 }
@@ -805,13 +878,13 @@ function renderGate() {
   const show = !state.session;
   $('#gate').style.display = show ? 'flex' : 'none';
   if (!show) return;
-  $('#gateAltViewer').hidden = isAdmin();
+  $('#gateAltViewer').hidden = isAdmin() || !adminIntent; // 관리자 링크는 #admin 접속 시에만
   // 관리자가 세션 없이 로그인한 상태면 가장 최근 세션을 자동 선택
   if (isAdmin() && state.sessions.length && !autoPick) {
     autoPick = true;
     rpc('set_admin_session', { p_session: state.sessions[0].id })
       .then(() => refresh(true))
-      .catch(e => toast('⚠ ' + errMsg(e)))
+      .catch(e => toast('' + errMsg(e)))
       .finally(() => { autoPick = false; });
   }
 }
@@ -831,6 +904,8 @@ function renderChrome() {
   sel.replaceChildren(...state.sessions.map(s => el('option', { value: s.id }, s.name)));
   if (state.session) sel.value = state.session.id;
   document.querySelectorAll('.chip-btn').forEach(b => b.classList.toggle('active', b.dataset.r === session.role));
+  // 관리자 진입점은 학생 화면에서 숨김 — 관리자이거나 #admin으로 접속했을 때만 노출
+  document.querySelector('.chip-btn[data-r="admin"]').style.display = (isAdmin() || adminIntent) ? '' : 'none';
 }
 
 function renderNotice() {
@@ -850,7 +925,7 @@ function renderRoster() {
   if (!isAdmin()) return;
   const q = filterText.trim().toLowerCase();
   for (const p of state.people) {
-    if (q && !(p.name.toLowerCase().includes(q) || (p.dept || '').toLowerCase().includes(q))) continue;
+    if (q && !(p.name.toLowerCase().includes(q) || (p.dept || '').toLowerCase().includes(q) || (p.student_no || '').toLowerCase().includes(q))) continue;
     const sel = el('select', {
       title: '특정 팀에 고정',
       onchange: e => {
@@ -859,23 +934,23 @@ function renderRoster() {
         act(() => rpc('apply_assign', { p_assign: [upd] }));
       },
     }, el('option', { value: '' }, '자동'),
-       state.teams.map((t, i) => el('option', { value: i }, '📌' + t.name)));
+       state.teams.map((t, i) => el('option', { value: i }, '고정: ' + t.name)));
     sel.value = p.pin == null ? '' : String(p.pin);
     list.append(el('div', { class: 'person-row' },
       el('div', { class: 'who' },
         el('div', { class: 'nm' }, p.name),
-        p.dept ? el('div', { class: 'dp', title: p.dept }, p.dept) : null),
+        (() => { const sub = [p.student_no, p.dept].filter(Boolean).join(' \u00b7 '); return sub ? el('div', { class: 'dp', title: sub }, sub) : null; })()),
       el('span', { class: 'tbadge' },
         p.team != null && state.teams[p.team]
           ? [el('span', { class: 'dot', style: `background:${teamColor(p.team)}` }), state.teams[p.team].name]
           : el('span', { style: 'color:var(--stone)' }, '—')),
       sel,
-      el('button', { class: 'x', title: '명단에서 제거', onclick: () => act(() => rpc('remove_person', { p_id: p.id })) }, '✕'),
+      el('button', { class: 'x', title: '명단에서 제거', onclick: () => act(() => rpc('remove_person', { p_id: p.id })) }, icon('x', 12)),
     ));
   }
   const un = state.people.filter(p => p.team == null).length;
   const pins = state.people.filter(p => p.pin != null).length;
-  $('#rosterStats').textContent = `총 ${state.people.length}명 · 미배정 ${un}명` + (pins ? ` · 고정 📌${pins}` : '');
+  $('#rosterStats').textContent = `총 ${state.people.length}명 · 미배정 ${un}명` + (pins ? ` · 고정 ${pins}명` : '');
 }
 
 function chipFor(p) {
@@ -894,10 +969,10 @@ function chipFor(p) {
       const pin = p.pin == null ? p.team : null;
       act(() => rpc('apply_assign', { p_assign: [{ id: p.id, team: p.team, pin }] }));
     },
-  }, '📌'));
+  }, icon('pin', 11)));
   chip.append(p.name);
   if (admin && p.team != null) {
-    chip.append(el('span', { class: 'out', title: '미배정으로 보내기', onclick: () => act(() => rpc('apply_assign', { p_assign: [{ id: p.id, team: null, pin: null }] })) }, '×'));
+    chip.append(el('span', { class: 'out', title: '미배정으로 보내기', onclick: () => act(() => rpc('apply_assign', { p_assign: [{ id: p.id, team: null, pin: null }] })) }, icon('x', 10)));
   }
   return chip;
 }
@@ -954,9 +1029,45 @@ function buildTeamCard(t, i, mine) {
   const card = el('div', { class: 'team-card' },
     head,
     el('div', { class: 'members' }, members.map(chipFor)),
-    teamInfo(t, i));
+    mine ? teamInfo(t, i) : compactInfo(t, i));
+  if (!mine) {
+    card.classList.add('clickable');
+    card.title = '클릭하면 상세 정보를 볼 수 있습니다';
+    card.addEventListener('click', e => {
+      if (e.target.closest('a, button, input, select, textarea, .pchip')) return;
+      openTeamDialog(i);
+    });
+  }
   makeDropTarget(card, i);
   return card;
+}
+
+/* 요약 정보: 서비스 링크 + [자세히] — 모든 카드가 같은 행 구성을 가짐 */
+function compactInfo(t, i) {
+  const box = el('div', { class: 'tinfo' });
+  const url = normalizeUrl(t.link || '');
+  box.append(el('div', { class: 'irow' },
+    el('span', { class: 'ilabel' }, '서비스'),
+    el('span', { class: 'ival' }, /^https?:\/\//.test(url)
+      ? el('a', { href: url, target: '_blank', rel: 'noopener' }, url.replace(/^https?:\/\//, ''))
+      : el('span', { class: 'none' }, '—')),
+    el('button', { class: 'btn sm', onclick: () => openTeamDialog(i) }, '자세히')));
+  const ev = evalRow(t, i);
+  if (ev) box.append(ev);
+  return box;
+}
+
+/* 팀 상세 팝업: 전체 정보(링크·파일·메모·피드백)와 편집 */
+let teamDlgIdx = null;
+function openTeamDialog(i) {
+  const t = state.teams[i];
+  if (!t) return;
+  teamDlgIdx = i;
+  $('#teamDlgTitle').textContent = t.name;
+  const ms = state.people.filter(p => p.team === i);
+  $('#teamDlgSub').textContent = ms.length ? ms.map(p => p.name).join(' · ') : '팀원 없음';
+  $('#teamDlgBody').replaceChildren(teamInfo(t, i));
+  $('#dlgTeam').showModal();
 }
 
 /* 팀 정보 행 — 권한에 따라 입력/보기 전환 (실제 검증은 서버) */
@@ -972,16 +1083,16 @@ function teamInfo(t, i) {
       btn.textContent = '저장 중…';
       try {
         await doSave(inp.value);
-        btn.textContent = '✓ 저장됨';
+        btn.classList.add('saved'); btn.replaceChildren(icon('check', 13), '저장됨');
         toast('저장했습니다');
         syncOk();
       } catch (e) {
         btn.textContent = '저장';
         btn.disabled = false;
-        toast('⚠ 저장 실패: ' + errMsg(e));
+        toast('저장 실패: ' + errMsg(e));
       }
     } }, '저장');
-    inp.addEventListener('input', () => { btn.disabled = false; btn.textContent = '저장'; });
+    inp.addEventListener('input', () => { btn.disabled = false; btn.classList.remove('saved'); btn.textContent = '저장'; });
     if (inp.tagName === 'INPUT') inp.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); if (!btn.disabled) btn.click(); } });
     return btn;
   };
@@ -992,7 +1103,7 @@ function teamInfo(t, i) {
     row('API 키', inp, makeSave(inp, async v => { await rpc('set_team_api', { p_idx: t.idx, p_api: v.trim() }); t.api = v.trim(); }));
   } else if (t.api !== null && session.role === 'member' && myTeam() === i) {
     row('API 키', t.api
-      ? [el('span', { class: 'apival' }, t.api), el('button', { class: 'icon-btn', title: '복사', onclick: () => navigator.clipboard?.writeText(t.api).then(() => toast('API 키를 복사했습니다')) }, '⧉')]
+      ? [el('span', { class: 'apival' }, t.api), el('button', { class: 'icon-btn', title: '복사', onclick: () => navigator.clipboard?.writeText(t.api).then(() => toast('API 키를 복사했습니다')) }, icon('copy'))]
       : el('span', { class: 'none' }, '관리자가 아직 발급하지 않았습니다'));
   }
 
@@ -1003,7 +1114,7 @@ function teamInfo(t, i) {
         const u = normalizeUrl(inp.value);
         if (/^https?:\/\//.test(u)) window.open(u, '_blank', 'noopener');
         else toast('열 수 있는 링크가 아닙니다');
-      } }, '↗');
+      } }, icon('open'));
       row(label, inp, openBtn, makeSave(inp, async v => {
         const nv = normalizeUrl(v);
         await rpc('update_team_field', { p_idx: t.idx, p_field: key, p_value: nv });
@@ -1021,8 +1132,8 @@ function teamInfo(t, i) {
   const fileBits = [];
   if (t.pptFile) {
     fileBits.push(el('button', { class: 'file-pill', title: '클릭하여 다운로드', onclick: () => downloadPpt(t) },
-      '📎', el('span', { class: 'fname' }, t.pptFile.name), el('span', { class: 'fsize' }, fmtSize(t.pptFile.size))));
-    if (edit) fileBits.push(el('button', { class: 'icon-btn', title: '파일 삭제', onclick: () => deletePpt(t) }, '✕'));
+      icon('file', 13), el('span', { class: 'fname' }, t.pptFile.name), el('span', { class: 'fsize' }, fmtSize(t.pptFile.size))));
+    if (edit) fileBits.push(el('button', { class: 'icon-btn', title: '파일 삭제', onclick: () => deletePpt(t) }, icon('x', 12)));
     if (t.pptFile.by) fileBits.push(el('span', { class: 'file-meta' }, `${t.pptFile.by} · ${fmtDate(t.pptFile.at)}`));
   } else {
     fileBits.push(el('span', { class: 'none' }, '—'));
@@ -1033,19 +1144,26 @@ function teamInfo(t, i) {
   if (edit) {
     const ta = el('textarea', { class: 'pill', rows: 2 }, t.memo || '');
     row('메모', ta, makeSave(ta, async v => { await rpc('update_team_field', { p_idx: t.idx, p_field: 'memo', p_value: v }); t.memo = v; }));
-  } else if (t.memo) {
-    row('메모', el('span', { class: 'memo-view' }, t.memo));
+  } else {
+    row('메모', t.memo
+      ? el('span', { class: 'memo-view', title: t.memo }, t.memo)
+      : el('span', { class: 'none' }, '—'));
   }
 
   // 공개 피드백: 이 팀이 받은 주관식 피드백 (익명) — 세션 안 누구나 볼 수 있음
   const fbs = state.feedback.filter(f => f.to_team === i);
-  if (fbs.length) {
-    row(`피드백 ${fbs.length}`, el('div', { class: 'fb-list' },
-      fbs.map(f => el('div', { class: 'fb-item' }, f.comment))));
-  }
+  row(fbs.length ? `피드백 ${fbs.length}` : '피드백', fbs.length
+    ? el('div', { class: 'fb-list' }, fbs.map(f => el('div', { class: 'fb-item' }, f.comment)))
+    : el('span', { class: 'none' }, '—'));
 
-  // 평가: 팀원은 다른 팀만, 관리자는 모든 팀. 점수는 관리자만 열람 (서버 RLS 강제)
-  // 점수는 선택 즉시 제출, 주관식 피드백은 팝업에서 작성
+  const ev = evalRow(t, i);
+  if (ev) box.append(ev);
+  return box;
+}
+
+/* 평가 행: 팀원은 다른 팀만, 관리자는 모든 팀. 점수는 관리자만 열람 (서버 RLS 강제)
+   점수는 선택 즉시 제출, 주관식 피드백은 팝업에서 작성 */
+function evalRow(t, i) {
   const canEval = state.session && (isAdmin() || (session.role === 'member' && myTeam() != null && myTeam() !== i));
   if (canEval) {
     const mine = state.myEvals.get(i) || null;
@@ -1063,21 +1181,25 @@ function teamInfo(t, i) {
         toast(score != null ? `${t.name}에 ${score}점을 제출했습니다` : '점수를 삭제했습니다');
         await refresh(true);
       } catch (e) {
-        toast('⚠ ' + errMsg(e));
+        toast('' + errMsg(e));
         sel.value = mine && mine.score != null ? String(mine.score) : '';
         sel.disabled = !scoreAllowed;
       }
     });
     const hasFb = !!(mine && (mine.comment || '').trim());
-    row('평가', el('div', { class: 'evalbox' },
-      el('div', { class: 'erow' },
-        sel,
-        el('button', { class: 'btn sm', onclick: () => openFeedback(t, mine) }, hasFb ? '피드백 ✓' : '피드백'),
-        mine && mine.score != null ? el('span', { class: 'eval-note' }, '점수 제출됨') : null),
-      !scoreAllowed ? el('div', { class: 'eval-note' }, '점수는 관리자가 평가를 연 동안에만 · 피드백은 지금도 가능') : null));
+    return el('div', { class: 'irow' },
+      el('span', { class: 'ilabel' }, '평가'),
+      el('span', { class: 'ival' }, el('div', { class: 'evalbox' },
+        el('div', { class: 'erow' },
+          sel,
+          el('button', { class: 'btn sm', onclick: () => openFeedback(t, mine) }, hasFb ? '피드백 작성됨' : '피드백'),
+          mine && mine.score != null ? el('span', { class: 'eval-note' }, '점수 제출됨') : null),
+        !scoreAllowed ? el('div', { class: 'eval-note' }, '점수는 관리자가 평가를 연 동안에만 · 피드백은 지금도 가능') : null)));
   }
-  return box;
+  return null;
 }
+
+$('#teamDlgClose').addEventListener('click', () => $('#dlgTeam').close());
 
 /* 주관식 피드백 팝업 */
 let feedbackTarget = null;
@@ -1105,45 +1227,73 @@ $('#fbSave').addEventListener('click', async () => {
 });
 $('#fbCancel').addEventListener('click', () => $('#dlgFeedback').close());
 
-/* 평가 결과 (관리자 전용 섹션) */
+/* 평가 결과 (관리자 전용 섹션) — 총점 100 = 심사위원(관리자) 90% + 학생 10% */
+function evalStats(i) {
+  const evs = state.evals.filter(e => e.to_team === i);
+  const avg = a => a.reduce((x, y) => x + y.score, 0) / a.length;
+  const stu = evs.filter(e => e.from_team != null && e.score != null);
+  const jud = evs.filter(e => e.from_team == null && e.score != null);
+  const stuPts = stu.length ? avg(stu) : null;        // 학생 평균(1~10) → 그대로 10점 만점 환산
+  const judPts = jud.length ? avg(jud) * 9 : null;    // 심사위원 평균(1~10) × 9 → 90점 만점 환산
+  const total = (stuPts != null || judPts != null) ? (stuPts || 0) + (judPts || 0) : null;
+  return { evs, stu, jud, stuPts, judPts, total };
+}
 function renderEval() {
   if (!isAdmin() || !state.session) return;
-  $('#btnEvalOpen').textContent = state.session.evalOpen ? '⏸ 평가 마감' : '▶ 평가 열기';
+  $('#btnEvalOpen').textContent = state.session.evalOpen ? '\u23f8 평가 마감' : '\u25b6 평가 열기';
   $('#btnEvalOpen').classList.toggle('primary', !state.session.evalOpen);
   $('#evalSub').textContent = (state.session.evalOpen ? '진행 중 — 팀원들이 점수를 입력할 수 있습니다' : '닫힘 — 팀원 점수 입력 불가') + ` · 총 ${state.evals.length}건`;
   const box = $('#evalResults');
   box.replaceChildren();
   state.teams.forEach((t, i) => {
-    const evs = state.evals.filter(e => e.to_team === i)
-      .sort((a, b) => (a.from_team ?? -1) - (b.from_team ?? -1));
-    const scores = evs.filter(e => e.score != null).map(e => e.score);
-    const avg = scores.length ? (scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(1) : null;
-    const block = el('div', { class: 'eval-team' },
+    const st = evalStats(i);
+    const fbCnt = st.evs.filter(e => (e.comment || '').trim()).length;
+    box.append(el('div', {
+      class: 'eval-team clickable', role: 'button', tabindex: '0', title: '클릭하면 개별 점수를 볼 수 있습니다',
+      onclick: () => openScores(t, i),
+      onkeydown: e2 => { if (e2.key === 'Enter') openScores(t, i); },
+    },
       el('div', { class: 'ehead' },
         el('span', { class: 'dot', style: `background:${teamColor(i)}` }),
         el('span', {}, t.name),
-        el('span', { class: 'escore' }, avg == null ? '—' : `평균 ${avg}점`),
-        el('span', { class: 'ecnt' }, `점수 ${scores.length}건 · 피드백 ${evs.filter(e => (e.comment || '').trim()).length}건`)));
-    for (const e of evs) {
-      const from = e.from_team == null
-        ? '관리자'
-        : `${state.teams[e.from_team] ? state.teams[e.from_team].name : (e.from_team + 1) + '조'} · ${(state.people.find(p => p.id === e.evaluator_person) || {}).name || '?'}`;
-      block.append(el('div', { class: 'eval-line' },
-        el('span', { class: 'from' }, from),
-        el('span', { class: 'pt' }, e.score != null ? e.score + '점' : '점수 없음'),
-        el('span', { class: 'tm' }, fmtDate(e.updated_at)),
-        (e.comment || '').trim() ? el('div', { class: 'cmt' }, e.comment) : null));
-    }
-    box.append(block);
+        el('span', { class: 'escore' }, st.total == null ? '—' : `${st.total.toFixed(1)}점`),
+        el('span', { class: 'ecnt' },
+          `심사위원 ${st.judPts == null ? '—' : st.judPts.toFixed(1)}/90 (${st.jud.length}명) · ` +
+          `학생 ${st.stuPts == null ? '—' : st.stuPts.toFixed(1)}/10 (${st.stu.length}명) · 피드백 ${fbCnt}건`))));
   });
 }
+
+/* 개별 점수 팝업: 어떤 학생이 몇 점 줬는지 */
+function openScores(t, i) {
+  const st = evalStats(i);
+  $('#scTitle').textContent = `${t.name} 평가 상세`;
+  $('#scSummary').textContent = st.total == null
+    ? '아직 제출된 점수가 없습니다.'
+    : `총점 ${st.total.toFixed(1)}/100 = 심사위원 ${st.judPts == null ? 0 : st.judPts.toFixed(1)}/90 (90%) + 학생 ${st.stuPts == null ? 0 : st.stuPts.toFixed(1)}/10 (10%)`;
+  const list = $('#scList');
+  list.replaceChildren();
+  const evs = st.evs.slice().sort((a, b) => (a.from_team ?? -1) - (b.from_team ?? -1));
+  for (const e of evs) {
+    const who = e.from_team == null
+      ? '심사위원(관리자)'
+      : `${state.teams[e.from_team] ? state.teams[e.from_team].name : (e.from_team + 1) + '조'} · ${(state.people.find(p => p.id === e.evaluator_person) || {}).name || '?'}`;
+    list.append(el('div', { class: 'eval-line' },
+      el('span', { class: 'from' }, who),
+      el('span', { class: 'pt' }, e.score != null ? e.score + '점' : '점수 없음'),
+      el('span', { class: 'tm' }, fmtDate(e.updated_at)),
+      (e.comment || '').trim() ? el('div', { class: 'cmt' }, e.comment) : null));
+  }
+  if (!evs.length) list.append(el('span', { class: 'eval-note' }, '제출된 평가가 없습니다.'));
+  $('#dlgScores').showModal();
+}
+$('#scClose').addEventListener('click', () => $('#dlgScores').close());
 
 /* ---------- PPT 파일 (Supabase Storage, 세션별 폴더) ---------- */
 const pptPath = idx => `${state.session.id}/team-${idx}/file`;
 
 async function uploadPpt(idx, file) {
   if (!state.session) return;
-  if (file.size > MAX_FILE_MB * 1048576) { toast(`⚠ ${MAX_FILE_MB}MB 이하 파일만 업로드할 수 있습니다`); return; }
+  if (file.size > MAX_FILE_MB * 1048576) { toast(`${MAX_FILE_MB}MB 이하 파일만 업로드할 수 있습니다`); return; }
   toast('업로드 중…');
   try {
     const { error } = await sb.storage.from('ppt').upload(pptPath(idx), file, {
@@ -1154,7 +1304,7 @@ async function uploadPpt(idx, file) {
     await rpc('set_team_file', { p_idx: idx, p_file: { name: file.name, size: file.size } });
     await refresh(true);
     toast(`발표파일 업로드 완료 — ${file.name}`);
-  } catch (e) { toast('⚠ 업로드 실패: ' + errMsg(e)); }
+  } catch (e) { toast('업로드 실패: ' + errMsg(e)); }
 }
 function downloadPpt(t) {
   const { data } = sb.storage.from('ppt').getPublicUrl(pptPath(t.idx), { download: t.pptFile.name });
@@ -1169,7 +1319,7 @@ async function deletePpt(t) {
     if (error) throw error;
     await rpc('set_team_file', { p_idx: t.idx, p_file: null });
     await refresh(true);
-  } catch (e) { toast('⚠ 삭제 실패: ' + errMsg(e)); }
+  } catch (e) { toast('삭제 실패: ' + errMsg(e)); }
 }
 $('#pptInput').addEventListener('change', e => {
   const f = e.target.files[0];
@@ -1282,6 +1432,7 @@ function extractPeople(rows) {
   const header = clean[0].map(c => String(c || ''));
   let nameCol = header.findIndex(h => /성명|이름|name/i.test(h));
   let deptCol = header.findIndex(h => /소속|학과|전공|부서/i.test(h));
+  let snoCol = header.findIndex(h => /학번|사번|student/i.test(h));
   let dataRows;
   if (nameCol >= 0) dataRows = clean.slice(1);
   else {
@@ -1291,7 +1442,7 @@ function extractPeople(rows) {
       const score = clean.filter(r => /^[가-힣]{2,4}$/.test(r[c] || '')).length;
       if (score > bestScore) { bestScore = score; best = c; }
     }
-    nameCol = best; deptCol = -1;
+    nameCol = best; deptCol = -1; snoCol = -1;
     dataRows = /연번|번호|no\.?|이메일|캠퍼스/i.test(header.join(' ')) ? clean.slice(1) : clean;
   }
   const seen = new Map();
@@ -1302,7 +1453,7 @@ function extractPeople(rows) {
     const k = seen.get(name) || 0;
     seen.set(name, k + 1);
     if (k > 0) name = `${name}(${k + 1})`;
-    out.push({ name, dept: deptCol >= 0 ? (r[deptCol] || '').trim() : '' });
+    out.push({ name, dept: deptCol >= 0 ? (r[deptCol] || '').trim() : '', sno: snoCol >= 0 ? (r[snoCol] || '').trim() : '' });
   }
   return out;
 }
@@ -1314,7 +1465,7 @@ async function handleFile(file) {
     else people = extractPeople(parseDelimited(await file.text()));
     await act(() => rpc('merge_roster', { p_people: people }),
       r => `명단 갱신 완료 — 유지 ${r.kept}명 · 추가 ${r.added}명 · 제거 ${r.removed}명`);
-  } catch (err) { toast('⚠ 파일을 읽지 못했습니다: ' + errMsg(err)); }
+  } catch (err) { toast('파일을 읽지 못했습니다: ' + errMsg(err)); }
 }
 
 /* ---------- 내보내기 (관리자) ---------- */
@@ -1329,20 +1480,30 @@ function saveCsv(rows, filename) {
   URL.revokeObjectURL(a.href);
 }
 function downloadCsv() {
-  const rows = [['팀', '이름', '소속', 'API 키', 'PPT 링크', '서비스 링크', '발표파일', '메모']];
+  const rows = [['팀', '이름', '학번', '소속', 'API 키', 'PPT 링크', '서비스 링크', '발표파일', '메모']];
   state.teams.forEach((t, i) => {
     for (const p of state.people.filter(p => p.team === i)) {
-      rows.push([t.name, p.name, p.dept, t.api || '', t.ppt, t.link, t.pptFile ? t.pptFile.name : '', t.memo]);
+      rows.push([t.name, p.name, p.student_no || '', p.dept, t.api || '', t.ppt, t.link, t.pptFile ? t.pptFile.name : '', t.memo]);
     }
   });
   for (const p of state.people.filter(p => p.team == null)) {
-    rows.push(['미배정', p.name, p.dept, '', '', '', '', '']);
+    rows.push(['미배정', p.name, p.student_no || '', p.dept, '', '', '', '', '']);
   }
   saveCsv(rows, `팀배정_${new Date().toISOString().slice(0, 10)}.csv`);
   toast('CSV 다운로드 완료 (엑셀에서 열립니다)');
 }
 function downloadEvalCsv() {
-  const rows = [['대상 팀', '평가자 팀', '평가자', '점수', '피드백', '수정 시각']];
+  const rows = [['팀', '심사위원 환산(90)', '학생 환산(10)', '총점(100)', '심사위원 수', '학생 수']];
+  state.teams.forEach((t, i) => {
+    const st = evalStats(i);
+    rows.push([t.name,
+      st.judPts == null ? '' : st.judPts.toFixed(2),
+      st.stuPts == null ? '' : st.stuPts.toFixed(2),
+      st.total == null ? '' : st.total.toFixed(2),
+      st.jud.length, st.stu.length]);
+  });
+  rows.push([]);
+  rows.push(['대상 팀', '평가자 팀', '평가자', '점수', '피드백', '수정 시각']);
   state.teams.forEach((t, i) => {
     for (const e of state.evals.filter(e => e.to_team === i)) {
       rows.push([
@@ -1360,11 +1521,11 @@ function downloadEvalCsv() {
 }
 
 function copySummary() {
-  const lines = [`🎯 부트캠프 팀 배정 (${new Date().toLocaleDateString('ko-KR')})`, ''];
-  if ((state.notice.text || '').trim()) lines.push('📢 공지: ' + state.notice.text.trim(), '');
+  const lines = [`부트캠프 팀 배정 (${new Date().toLocaleDateString('ko-KR')})`, ''];
+  if ((state.notice.text || '').trim()) lines.push('공지: ' + state.notice.text.trim(), '');
   state.teams.forEach((t, i) => {
     const ms = state.people.filter(p => p.team === i);
-    lines.push(`■ ${t.name} (${ms.length}명)`);
+    lines.push(`[${t.name}] (${ms.length}명)`);
     lines.push('  ' + (ms.map(p => p.name).join(', ') || '-'));
     if (t.api) lines.push('  API 키: ' + t.api);
     if (t.ppt) lines.push('  PPT: ' + t.ppt);
@@ -1374,7 +1535,7 @@ function copySummary() {
     lines.push('');
   });
   const un = state.people.filter(p => p.team == null);
-  if (un.length) lines.push(`⏳ 미배정 (${un.length}명): ` + un.map(p => p.name).join(', '));
+  if (un.length) lines.push(`미배정 (${un.length}명): ` + un.map(p => p.name).join(', '));
   const text = lines.join('\n');
   (navigator.clipboard?.writeText(text) || Promise.reject()).then(
     () => toast('클립보드에 복사했습니다'),
@@ -1389,7 +1550,7 @@ function copySummary() {
 /* ---------- 역할 전환 ---------- */
 let authMode = 'login'; // login | setup | change
 function openAuth(mode) {
-  if (authError) { toast('⚠ ' + authError); return; }
+  if (authError) { toast('' + authError); return; }
   authMode = mode;
   $('#authTitle').textContent = mode === 'change' ? 'Password' : 'Admin';
   $('#authDesc').textContent =
@@ -1421,39 +1582,35 @@ async function authSubmit() {
   } catch (e) { err.textContent = errMsg(e); }
 }
 
-/* 팀원 로그인: 참여코드 입력 + 명단에서 본인 이름 클릭 */
+/* 팀원 입장: 참여코드 + 학번 + 이름. 명단에 없으면 서버가 자동 등록 */
 function openMember() {
-  if (authError) { toast('⚠ ' + authError); return; }
+  if (authError) { toast('\u26a0 ' + authError); return; }
   $('#memberCode').value = joinCode || '';
-  $('#memberFilter').value = '';
+  $('#memberSno').value = $('#memberName').value = '';
   $('#memberErr').textContent = '';
-  renderMemberList('');
   $('#dlgMember').showModal();
-  (joinCode ? $('#memberFilter') : $('#memberCode')).focus();
+  (joinCode ? $('#memberSno') : $('#memberCode')).focus();
 }
-function renderMemberList(q) {
-  q = q.trim().toLowerCase();
-  const list = state.people.filter(p => !q || p.name.toLowerCase().includes(q));
-  $('#memberList').replaceChildren(
-    ...(list.length
-      ? list.map(p => el('button', { class: 'name-pick', title: p.dept || '', onclick: () => memberPick(p.name) }, p.name))
-      : [el('span', { class: 'eval-note' }, '해당하는 이름이 없습니다. 관리자에게 문의하세요.')]));
-}
-async function memberPick(name) {
+async function memberEnter() {
   const code = $('#memberCode').value.trim();
-  if (!code) {
-    $('#memberErr').textContent = '참여코드를 먼저 입력하세요.';
-    $('#memberCode').focus();
-    return;
-  }
+  const sno = $('#memberSno').value.trim();
+  const name = $('#memberName').value.trim();
+  const err = $('#memberErr');
+  if (!code) { err.textContent = '참여코드를 입력하세요.'; $('#memberCode').focus(); return; }
+  if (!sno) { err.textContent = '학번을 입력하세요.'; $('#memberSno').focus(); return; }
+  if (!name) { err.textContent = '이름을 입력하세요.'; $('#memberName').focus(); return; }
   try {
-    await rpc('member_login', { p_name: name, p_code: code });
+    await rpc('member_enter', { p_name: name, p_student_no: sno, p_code: code });
     saveJoinCode(code);
     $('#dlgMember').close();
     await refresh(true);
     const p = me();
-    toast(p ? `${p.name}님, ${state.teams[p.team]?.name || ''} 팀원 모드입니다.` : '팀원 모드입니다.');
-  } catch (e) { $('#memberErr').textContent = errMsg(e); }
+    toast(p
+      ? (p.team != null
+          ? `${p.name}님, ${state.teams[p.team]?.name || ''} 팀원 모드입니다.`
+          : `${p.name}님, 등록되었습니다 — 관리자의 팀 배정을 기다려주세요.`)
+      : '팀원 모드입니다.');
+  } catch (e) { err.textContent = errMsg(e); }
 }
 
 /* ---------- 세션 입장/관리 ---------- */
@@ -1509,15 +1666,8 @@ $('#authOk').addEventListener('click', authSubmit);
 $('#authCancel').addEventListener('click', () => $('#dlgAuth').close());
 $('#dlgAuth').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); authSubmit(); } });
 $('#memberCancel').addEventListener('click', () => $('#dlgMember').close());
-$('#memberFilter').addEventListener('input', e => renderMemberList(e.target.value));
-$('#memberCode').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); $('#memberFilter').focus(); } });
-$('#memberFilter').addEventListener('keydown', e => {
-  if (e.key !== 'Enter') return;
-  e.preventDefault();
-  const q = e.target.value.trim().toLowerCase();
-  const hits = state.people.filter(p => q && p.name.toLowerCase().includes(q));
-  if (hits.length === 1) memberPick(hits[0].name); // 정확히 한 명이면 Enter로 바로 선택
-});
+$('#memberOk').addEventListener('click', memberEnter);
+$('#dlgMember').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); memberEnter(); } });
 
 $('#noticeEditBtn').addEventListener('click', () => {
   $('#noticeInput').value = state.notice.text;
@@ -1540,7 +1690,7 @@ $('#noticeSave').addEventListener('click', () => {
 
 $('#btnRandom').addEventListener('click', randomize);
 $('#btnReset').addEventListener('click', async () => {
-  if (!await ask({ title: '배정 초기화', desc: '모든 배정과 고정(📌)을 해제할까요? 명단·팀 정보는 유지됩니다.', ok: '초기화' })) return;
+  if (!await ask({ title: '배정 초기화', desc: '모든 배정과 고정을 해제할까요? 명단·팀 정보는 유지됩니다.', ok: '초기화' })) return;
   act(() => rpc('reset_assign'), '배정을 초기화했습니다');
 });
 $('#teamCount').addEventListener('change', e => {
@@ -1558,7 +1708,7 @@ $('#gateNewSession').addEventListener('click', openSessionDialog);
 $('#uSwitch').addEventListener('click', async () => {
   const code = await ask({ title: '세션 변경', desc: '다른 교육의 참여코드를 입력하세요.', input: { placeholder: '참여코드' }, ok: '입장' });
   if (!code || !code.trim()) return;
-  try { await enterByCode(code.trim()); } catch (e) { toast('⚠ ' + errMsg(e)); }
+  try { await enterByCode(code.trim()); } catch (e) { toast('' + errMsg(e)); }
 });
 
 /* 세션 관리 (관리자) */
@@ -1581,7 +1731,7 @@ async function openQr(sess) {
   try { code = await fetchSessionCode(sess.id); } catch (e) {}
   if (!code) {
     if (state.session && sess.id === state.session.id) changeSessionCode();
-    else toast('⚠ 이 세션의 참여코드를 읽지 못했습니다');
+    else toast('이 세션의 참여코드를 읽지 못했습니다');
     return;
   }
   qrUrl = location.origin + location.pathname + '#code=' + encodeURIComponent(code);
@@ -1618,7 +1768,7 @@ async function changeSessionCode() {
     ok: '저장',
   });
   if (code == null) return;
-  if (!code.trim()) { toast('⚠ 코드는 비울 수 없습니다'); return; }
+  if (!code.trim()) { toast('코드는 비울 수 없습니다'); return; }
   act(() => rpc('set_session_code', { p_code: code.trim() }), '참여코드를 저장했습니다. QR·참여코드에서 QR을 공유하세요.');
 }
 $('#btnQr').addEventListener('click', openQr);
@@ -1627,7 +1777,7 @@ $('#qrClose').addEventListener('click', () => $('#dlgQr').close());
 $('#qrCopy').addEventListener('click', () => {
   (navigator.clipboard?.writeText(qrUrl) || Promise.reject()).then(
     () => toast('입장 링크를 복사했습니다'),
-    () => toast('⚠ 복사하지 못했습니다 — 링크를 직접 선택해 복사하세요'));
+    () => toast('복사하지 못했습니다 — 링크를 직접 선택해 복사하세요'));
 });
 $('#btnSessRename').addEventListener('click', async () => {
   if (!state.session) return;
@@ -1707,10 +1857,12 @@ document.body.addEventListener('focusout', () => setTimeout(() => { if (!isEditi
     return;
   }
   sb = supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
-  // QR로 진입: URL 해시(#code=...)의 참여코드로 자동 입장
-  const hm = location.hash.match(/[#&]code=([^&]+)/);
+  // URL 해시: #code=... 는 QR 자동 입장, #admin 은 관리자 진입점 노출
+  const rawHash = location.hash;
+  const hm = rawHash.match(/[#&]code=([^&]+)/);
   const pendingJoin = hm ? decodeURIComponent(hm[1]) : null;
-  if (hm) history.replaceState(null, '', location.pathname + location.search);
+  adminIntent = /(^|[#&])admin([&=]|$)/.test(rawHash);
+  if (rawHash) history.replaceState(null, '', location.pathname + location.search);
   try { await ensureAuth(); } catch (e) { console.warn(e); }
   await refresh(true);
   if (pendingJoin) {
@@ -1721,6 +1873,7 @@ document.body.addEventListener('focusout', () => setTimeout(() => { if (!isEditi
       $('#gateErr').textContent = errMsg(e);
     }
   }
+  if (adminIntent && !isAdmin()) openAuth(state.adminSet ? 'login' : 'setup');
   setInterval(() => { if (!document.hidden) refresh(); }, 10000);
   document.addEventListener('visibilitychange', () => { if (!document.hidden) refresh(); });
 })();
