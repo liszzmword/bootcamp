@@ -449,6 +449,11 @@ create or replace function public.set_person_sno(p_id uuid, p_sno text) returns 
 language plpgsql security definer set search_path = public as $$
 begin
   if not public.is_admin() then raise exception 'NOT_ADMIN'; end if;
+  if trim(coalesce(p_sno, '')) <> '' and exists (
+    select 1 from people
+    where session_id = public.my_session() and student_no = trim(p_sno) and id <> p_id) then
+    raise exception 'SNO_TAKEN';
+  end if;
   update people set student_no = trim(coalesce(p_sno, ''))
   where id = p_id and session_id = public.my_session();
 end $$;
@@ -462,6 +467,10 @@ begin
   v_sid := public.my_session();
   if v_sid is null then raise exception 'NO_SESSION'; end if;
   if trim(coalesce(p_name, '')) = '' then raise exception 'NO_NAME'; end if;
+  if trim(coalesce(p_student_no, '')) <> '' and exists (
+    select 1 from people where session_id = v_sid and student_no = trim(p_student_no)) then
+    raise exception 'SNO_TAKEN';
+  end if;
   insert into people (session_id, name, dept, student_no)
   values (v_sid, trim(p_name), coalesce(p_dept, ''), trim(coalesce(p_student_no, '')));
 end $$;
