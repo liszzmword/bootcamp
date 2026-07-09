@@ -318,27 +318,24 @@ begin
   if v_name = '' then raise exception 'NO_NAME'; end if;
   if v_sno = '' then raise exception 'NO_SNO'; end if;
 
-  -- 1) 학번 일치 → 이름 확인 후 로그인 (동명이인 자동 접미사 '이름(1234)'도 허용)
+  -- 1) 학번 일치 → 이름까지 맞아야 로그인 (동명이인 자동 접미사 '이름(1234)'도 허용)
   select * into per from people
   where session_id = v_sid and student_no = v_sno
   order by created_at limit 1;
   if found then
     if per.name <> v_name and per.name not like v_name || '(%' then raise exception 'BAD_MATCH'; end if;
   else
-    -- 2) 이름 일치 + 학번 미기록(관리자가 학번 없이 올린 명단) → 학번을 붙이고 로그인
-    select * into per from people
-    where session_id = v_sid and name = v_name and student_no = ''
-    order by created_at limit 1;
-    if found then
-      update people set student_no = v_sno where id = per.id;
-    else
-      -- 3) 신규 자동 등록. 동명이인이 있으면 학번 끝 4자리로 구분
-      if exists (select 1 from people where session_id = v_sid and name = v_name) then
-        v_name := v_name || '(' || right(v_sno, 4) || ')';
-      end if;
-      insert into people (session_id, name, dept, student_no) values (v_sid, v_name, '', v_sno)
-      returning * into per;
+    -- 2) 같은 이름이 명단에 있는데 학번이 안 맞으면 절대 로그인 불가
+    --    (학번 미등록 이름은 관리자가 학번을 채워줘야 함 — 아무 학번으로나 묶이는 것 방지)
+    if exists (select 1 from people where session_id = v_sid and name = v_name and student_no = '') then
+      raise exception 'NO_SNO_SET';
     end if;
+    if exists (select 1 from people where session_id = v_sid and name = v_name) then
+      raise exception 'BAD_MATCH';
+    end if;
+    -- 3) 명단에 전혀 없는 새 이름 → 자체 등록 (팀 미배정)
+    insert into people (session_id, name, dept, student_no) values (v_sid, v_name, '', v_sno)
+    returning * into per;
   end if;
 
   insert into profiles (uid, role, person_id, session_id) values (auth.uid(), 'member', per.id, v_sid)
@@ -446,6 +443,14 @@ begin
   get diagnostics v_removed = row_count;
 
   return jsonb_build_object('kept', v_kept, 'added', v_total - v_kept, 'removed', v_removed);
+end $$;
+
+create or replace function public.set_person_sno(p_id uuid, p_sno text) returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  if not public.is_admin() then raise exception 'NOT_ADMIN'; end if;
+  update people set student_no = trim(coalesce(p_sno, ''))
+  where id = p_id and session_id = public.my_session();
 end $$;
 
 drop function if exists public.add_person(text, text);  -- 학번 파라미터 추가로 시그니처 변경

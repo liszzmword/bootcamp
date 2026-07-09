@@ -468,7 +468,8 @@
       <textarea id="pasteArea" class="pill" rows="4" placeholder="한 줄에 한 명씩 (엑셀 표 복사-붙여넣기 가능)"></textarea>
       <button class="btn sm primary" id="btnApplyPaste" style="display:none;width:100%;margin-top:8px">적용</button>
       <div class="roster-tools">
-        <input id="newName" class="pill" placeholder="이름 직접 추가" style="height:34px">
+        <input id="newName" class="pill" placeholder="이름" style="height:34px">
+        <input id="newSno" class="pill" placeholder="학번" style="height:34px;flex:0 1 96px">
         <button class="btn sm" id="btnAdd">추가</button>
       </div>
       <div class="roster-tools">
@@ -692,6 +693,7 @@ const ICONS = {
   open: '<path d="M7 17 17 7"/><path d="M8 7h9v9"/>',
   file: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/>',
   check: '<path d="M20 6 9 17l-5-5"/>',
+  edit: '<path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>',
   expand: '<path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/>',
 };
 function icon(name, size = 14) {
@@ -763,7 +765,8 @@ const ERR_MAP = {
   EMPTY_CODE: '코드를 입력하세요.',
   NO_NAME: '이름을 입력하세요.',
   NO_SNO: '학번을 입력하세요.',
-  BAD_MATCH: '학번과 이름이 일치하지 않습니다. 관리자에게 문의하세요.',
+  BAD_MATCH: '이름과 학번이 일치하지 않습니다. 관리자에게 문의하세요.',
+  NO_SNO_SET: '이 이름은 명단에 학번이 등록되어 있지 않습니다. 관리자에게 학번 등록을 요청하세요.',
   NO_TEAM: '아직 팀이 배정되지 않았습니다. 관리자에게 문의하세요.',
   OWN_TEAM: '자기 팀은 평가할 수 없습니다.',
   EVAL_CLOSED: '관리자가 평가를 연 동안에만 점수를 줄 수 있습니다.',
@@ -964,6 +967,16 @@ function renderRoster() {
           ? [el('span', { class: 'dot', style: `background:${teamColor(p.team)}` }), state.teams[p.team].name]
           : el('span', { style: 'color:var(--stone)' }, '—')),
       sel,
+      el('button', { class: 'x', title: p.student_no ? `학번 수정 (현재 ${p.student_no})` : '학번 등록', onclick: async () => {
+        const sno = await ask({
+          title: '학번',
+          desc: `${p.name}의 학번 — 팀원 로그인 시 정확히 일치해야 합니다.`,
+          input: { value: p.student_no || '', placeholder: '학번' },
+          ok: '저장',
+        });
+        if (sno == null) return;
+        act(() => rpc('set_person_sno', { p_id: p.id, p_sno: sno.trim() }), '학번을 저장했습니다');
+      } }, icon('edit', 12)),
       el('button', { class: 'x', title: '명단에서 제거', onclick: () => act(() => rpc('remove_person', { p_id: p.id })) }, icon('x', 12)),
     ));
   }
@@ -1867,11 +1880,16 @@ $('#btnApplyPaste').addEventListener('click', () => {
 });
 $('#btnAdd').addEventListener('click', addPerson);
 $('#newName').addEventListener('keydown', e => { if (e.key === 'Enter') addPerson(); });
+$('#newSno').addEventListener('keydown', e => { if (e.key === 'Enter') addPerson(); });
 function addPerson() {
   const name = $('#newName').value.trim();
+  const sno = $('#newSno').value.trim();
   if (!name) return;
-  $('#newName').value = '';
-  act(() => rpc('add_person', { p_name: name }));
+  $('#newName').value = $('#newSno').value = '';
+  filterText = '';
+  $('#filter').value = '';
+  act(() => rpc('add_person', { p_name: name, p_student_no: sno }),
+      sno ? `${name} 추가 완료` : `${name} 추가 완료 — 학번을 등록해야 이 이름으로 팀원 로그인할 수 있습니다`);
 }
 $('#btnClearAll').addEventListener('click', async () => {
   if (!await ask({ title: '명단 삭제', desc: '명단을 전부 삭제할까요? 되돌릴 수 없습니다.', ok: '전부 삭제' })) return;
