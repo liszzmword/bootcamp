@@ -33,6 +33,7 @@ create table if not exists public.session_codes (
 );
 create unique index if not exists session_codes_code_uniq on public.session_codes (lower(code));
 alter table public.sessions add column if not exists allow_register boolean not null default true;
+alter table public.sessions add column if not exists individual_open boolean not null default false;
 
 create table if not exists public.people (
   id uuid primary key default gen_random_uuid(),
@@ -40,11 +41,15 @@ create table if not exists public.people (
   name text not null,
   dept text not null default '',
   student_no text not null default '',
+  work_link text not null default '',
+  work_memo text not null default '',
   team int,
   pin int,
   created_at timestamptz not null default now()
 );
 alter table public.people add column if not exists student_no text not null default '';
+alter table public.people add column if not exists work_link text not null default '';   -- 개별활동 제출 링크
+alter table public.people add column if not exists work_memo text not null default '';
 
 create table if not exists public.teams (
   session_id uuid not null references public.sessions(id) on delete cascade,
@@ -220,6 +225,7 @@ drop view if exists public.people_view;
 create view public.people_view with (security_barrier) as
   select id, session_id, name, dept,
          case when public.is_admin() then student_no else '' end as student_no,
+         work_link, work_memo,
          team, pin, created_at
   from public.people
   where public.is_admin() or session_id = public.my_session();
@@ -477,6 +483,26 @@ begin
   end if;
   insert into people (session_id, name, dept, student_no)
   values (v_sid, trim(p_name), coalesce(p_dept, ''), trim(coalesce(p_student_no, '')));
+end $$;
+
+-- 개별활동: 관리자가 열면 Individual 섹션이 생기고, 각 팀원이 자기 결과물 링크/메모 제출
+create or replace function public.set_individual_open(p_open boolean) returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  if not public.is_admin() then raise exception 'NOT_ADMIN'; end if;
+  if public.my_session() is null then raise exception 'NO_SESSION'; end if;
+  update sessions set individual_open = coalesce(p_open, false) where id = public.my_session();
+end $$;
+
+create or replace function public.set_my_work(p_link text, p_memo text) returns void
+language plpgsql security definer set search_path = public as $$
+declare v_pid uuid; v_open boolean;
+begin
+  select pr.person_id into v_pid from profiles pr where pr.uid = auth.uid() and pr.role = 'member';
+  if v_pid is null then raise exception 'NOT_ALLOWED'; end if;
+  select individual_open into v_open from sessions where id = public.my_session();
+  if not coalesce(v_open, false) then raise exception 'INDIV_CLOSED'; end if;
+  update people set work_link = coalesce(p_link, ''), work_memo = coalesce(p_memo, '') where id = v_pid;
 end $$;
 
 create or replace function public.set_allow_register(p_allow boolean) returns void

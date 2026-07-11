@@ -225,6 +225,10 @@
   .save-btn:disabled { background: var(--cloud); color: var(--stone); }
   .save-btn.saved, .save-btn.saved:disabled { background: none; color: var(--success); opacity: 1; }
   .pchip .pinbtn { display: inline-flex; }
+  /* 공지 입력 팝업 */
+  #dlgNotice { width: 560px; }
+  #dlgNotice textarea { width: 100%; min-height: 240px; font-size: 15px; line-height: 1.6; resize: vertical; }
+
   /* 메모 확대 팝업 */
   #dlgMemo { width: 480px; }
   .memo-full {
@@ -344,6 +348,17 @@
   #qrBox svg { width: 240px; height: 240px; max-width: 100%; }
   #qrCode { font-family: var(--font-display); font-size: 28px; font-weight: 700; letter-spacing: 2px; text-align: center; margin: 4px 0 8px; }
   #qrLink { font-size: 11px; color: var(--mute); word-break: break-all; margin-bottom: 8px; }
+
+  /* 개별활동 제출 */
+  #indivMine { margin-bottom: 12px; }
+  #indivMine .irow2 { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; background: var(--cloud); padding: 12px 16px; }
+  #indivMine .irow2 input.pill { background: var(--canvas); height: 38px; flex: 1 1 160px; min-width: 0; }
+  #indivList { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 8px; padding-bottom: 8px; }
+  .indiv-row { border: 1px solid var(--hairline-soft); padding: 12px 14px; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+  .indiv-row .inm { font-weight: 700; display: flex; align-items: center; gap: 6px; }
+  .indiv-row .inm .tbadge { font-weight: 500; }
+  .indiv-row a { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+  .indiv-row .imemo { font-size: 12.5px; color: var(--charcoal); white-space: pre-wrap; overflow-wrap: anywhere; }
 
   /* 공개 피드백 (팀 카드 안, 익명) */
   .fb-list { display: flex; flex-direction: column; gap: 6px; width: 100%; max-height: 74px; overflow-y: auto; }
@@ -487,13 +502,6 @@
         <div class="body" id="noticeBody"></div>
         <div class="meta" id="noticeMeta"></div>
       </div>
-      <div id="noticeEdit" hidden>
-        <textarea id="noticeInput" placeholder="전체 공지 내용을 입력하세요"></textarea>
-        <div class="edit-actions">
-          <button class="btn sm" id="noticeCancel" style="background:var(--canvas)">취소</button>
-          <button class="btn sm" id="noticeSave" style="background:var(--canvas)"><b>저장</b></button>
-        </div>
-      </div>
       <button class="edit-btn admin-only" id="noticeEditBtn">공지 수정</button>
     </section>
 
@@ -527,6 +535,13 @@
     <div class="section-head"><span id="teamsHeadLabel">Teams</span> <span class="sub" id="teamsSub"></span></div>
     <div id="teamsGrid"><span style="color:var(--stone);font-size:13px">불러오는 중…</span></div>
 
+    <div id="indivSection" hidden>
+      <div class="section-head">Individual <span class="sub" id="indivSub"></span></div>
+      <div class="toolbar admin-only"><button class="btn" id="btnIndivOpen"></button></div>
+      <div id="indivMine"></div>
+      <div id="indivList"></div>
+    </div>
+
     <footer class="fine">
       데이터는 Supabase에 저장되어 같은 교육 세션 접속자에게 실시간 공유됩니다. 팀원은 본인 조의 링크·파일만 수정할 수 있으며 권한은 서버에서 검증됩니다.<br>
       평가 점수는 관리자만 볼 수 있고, 주관식 피드백은 익명으로 모두에게 공개됩니다. 참여코드는 수강생에게만 공유하세요. © 2026 BOOTCAMP TEAM BOARD
@@ -557,6 +572,17 @@
   <div class="actions">
     <button class="btn sm" id="memberCancel">둘러보기로 계속</button>
     <button class="btn sm primary" id="memberOk">입장</button>
+  </div>
+</dialog>
+
+<dialog id="dlgNotice">
+  <h2>Notice</h2>
+  <div class="desc">전체 공지입니다. 세션에 입장한 모두에게 보입니다.</div>
+  <textarea id="noticeInput" class="pill" rows="12" placeholder="공지 내용을 입력하세요"></textarea>
+  <div class="err" id="noticeErr"></div>
+  <div class="actions">
+    <button class="btn sm" id="noticeCancel">취소</button>
+    <button class="btn sm primary" id="noticeSave">저장</button>
   </div>
 </dialog>
 
@@ -770,6 +796,7 @@ const ERR_MAP = {
   NO_SNO_SET: '이 이름은 명단에 학번이 등록되어 있지 않습니다. 관리자에게 학번 등록을 요청하세요.',
   SNO_TAKEN: '이미 같은 학번이 명단에 있습니다.',
   REG_CLOSED: '신규 등록이 마감되었습니다. 관리자에게 문의하세요.',
+  INDIV_CLOSED: '개별활동이 열려 있지 않습니다.',
   NO_TEAM: '아직 팀이 배정되지 않았습니다. 관리자에게 문의하세요.',
   OWN_TEAM: '자기 팀은 평가할 수 없습니다.',
   EVAL_CLOSED: '관리자가 평가를 연 동안에만 점수를 줄 수 있습니다.',
@@ -808,7 +835,7 @@ async function rpc(fn, args) {
 async function fetchAll() {
   const [se, pe, te, sec, st, pr, ev, fb] = await Promise.all([
     sb.from('sessions').select('*').order('created_at', { ascending: false }),
-    sb.from('people_view').select('id,session_id,name,dept,student_no,team,pin'),
+    sb.from('people_view').select('id,session_id,name,dept,student_no,work_link,work_memo,team,pin'),
     sb.from('teams').select('session_id,idx,name,ppt,link,memo,ppt_file').order('idx'),
     sb.from('team_secrets').select('session_id,idx,api'),
     sb.from('settings').select('*').eq('id', 1).single(),
@@ -827,7 +854,7 @@ function applyData(d) {
     ? { role: d.profile.role, personId: d.profile.person_id, sessionId: d.profile.session_id }
     : { role: 'viewer', personId: null, sessionId: null };
   const cur = state.sessions.find(s => s.id === session.sessionId) || null;
-  state.session = cur ? { id: cur.id, name: cur.name, evalOpen: cur.eval_open, allowRegister: cur.allow_register !== false } : null;
+  state.session = cur ? { id: cur.id, name: cur.name, evalOpen: cur.eval_open, allowRegister: cur.allow_register !== false, individualOpen: cur.individual_open === true } : null;
   state.teamCount = cur ? cur.team_count : 0;
   state.notice = cur ? { text: cur.notice, updatedAt: cur.notice_updated_at } : { text: '', updatedAt: null };
   const sid = cur ? cur.id : null;
@@ -896,6 +923,7 @@ function render() {
   renderNotice();
   renderRoster();
   renderBoard();
+  renderIndiv();
   renderEval();
 }
 
@@ -1275,6 +1303,69 @@ $('#fbSave').addEventListener('click', async () => {
 });
 $('#fbCancel').addEventListener('click', () => $('#dlgFeedback').close());
 
+/* 개별활동: 관리자가 열면 각자 자기 결과물 링크·메모를 제출하고 모두가 열람 */
+function renderIndiv() {
+  const sec = $('#indivSection');
+  if (!state.session || (!state.session.individualOpen && !isAdmin())) { sec.hidden = true; return; }
+  sec.hidden = false;
+  const open = state.session.individualOpen;
+  const submitted = state.people.filter(p => (p.work_link || '').trim() || (p.work_memo || '').trim());
+  $('#indivSub').textContent = open ? `개별 제출 진행 중 · ${submitted.length}명 제출` : '닫힘 — 관리자에게만 보입니다';
+  const tgl = $('#btnIndivOpen');
+  tgl.textContent = open ? '⏸ 개별활동 마감' : '▶ 개별활동 열기';
+  tgl.classList.toggle('primary', !open);
+
+  // 내 제출 (팀원)
+  const mineBox = $('#indivMine');
+  mineBox.replaceChildren();
+  const p = me();
+  if (open && session.role === 'member' && p) {
+    const li = el('input', { class: 'pill', value: p.work_link || '', placeholder: '내 결과물 링크 (https://... 또는 도메인)' });
+    const mi = el('input', { class: 'pill', value: p.work_memo || '', placeholder: '한 줄 메모 (선택)' });
+    const btn = el('button', { class: 'btn sm save-btn', disabled: true, onclick: async () => {
+      btn.disabled = true;
+      btn.textContent = '저장 중…';
+      try {
+        const nv = normalizeUrl(li.value);
+        await rpc('set_my_work', { p_link: nv, p_memo: mi.value.trim() });
+        li.value = nv;
+        btn.classList.add('saved');
+        btn.replaceChildren(icon('check', 13), '저장됨');
+        toast('개별 제출을 저장했습니다');
+        syncOk();
+      } catch (e) {
+        btn.textContent = '저장';
+        btn.disabled = false;
+        toast('⚠ 저장 실패: ' + errMsg(e));
+      }
+    } }, '저장');
+    const enable = () => { btn.disabled = false; btn.classList.remove('saved'); btn.textContent = '저장'; };
+    li.addEventListener('input', enable);
+    mi.addEventListener('input', enable);
+    for (const inp of [li, mi]) inp.addEventListener('keydown', e2 => { if (e2.key === 'Enter') { e2.preventDefault(); if (!btn.disabled) btn.click(); } });
+    mineBox.append(el('div', { class: 'irow2' },
+      el('b', {}, '내 제출'), li, mi, btn));
+  }
+
+  // 제출 목록 (모두 열람)
+  const list = $('#indivList');
+  list.replaceChildren();
+  for (const q of submitted) {
+    const url = normalizeUrl(q.work_link || '');
+    list.append(el('div', { class: 'indiv-row' },
+      el('div', { class: 'inm' },
+        q.name,
+        q.team != null && state.teams[q.team]
+          ? el('span', { class: 'tbadge' }, el('span', { class: 'dot', style: `background:${teamColor(q.team)}` }), state.teams[q.team].name)
+          : null),
+      /^https?:\/\//.test(url)
+        ? el('a', { href: url, target: '_blank', rel: 'noopener' }, url.replace(/^https?:\/\//, ''))
+        : el('span', { class: 'none' }, '링크 없음'),
+      (q.work_memo || '').trim() ? el('div', { class: 'imemo' }, q.work_memo) : null));
+  }
+  if (open && !submitted.length) list.append(el('span', { class: 'eval-note' }, '아직 제출한 사람이 없습니다.'));
+}
+
 /* 평가 결과 (관리자 전용 섹션) — 총점 100 = 심사위원(관리자) 90% + 학생 10% */
 function evalStats(i) {
   const evs = state.evals.filter(e => e.to_team === i);
@@ -1528,14 +1619,14 @@ function saveCsv(rows, filename) {
   URL.revokeObjectURL(a.href);
 }
 function downloadCsv() {
-  const rows = [['팀', '이름', '학번', '소속', 'API 키', 'PPT 링크', '서비스 링크', '발표파일', '메모']];
+  const rows = [['팀', '이름', '학번', '소속', 'API 키', 'PPT 링크', '서비스 링크', '발표파일', '메모', '개별 링크', '개별 메모']];
   state.teams.forEach((t, i) => {
     for (const p of state.people.filter(p => p.team === i)) {
-      rows.push([t.name, p.name, p.student_no || '', p.dept, t.api || '', t.ppt, t.link, t.pptFile ? t.pptFile.name : '', t.memo]);
+      rows.push([t.name, p.name, p.student_no || '', p.dept, t.api || '', t.ppt, t.link, t.pptFile ? t.pptFile.name : '', t.memo, p.work_link || '', p.work_memo || '']);
     }
   });
   for (const p of state.people.filter(p => p.team == null)) {
-    rows.push(['미배정', p.name, p.student_no || '', p.dept, '', '', '', '', '']);
+    rows.push(['미배정', p.name, p.student_no || '', p.dept, '', '', '', '', '', p.work_link || '', p.work_memo || '']);
   }
   saveCsv(rows, `팀배정_${new Date().toISOString().slice(0, 10)}.csv`);
   toast('CSV 다운로드 완료 (엑셀에서 열립니다)');
@@ -1737,21 +1828,22 @@ $('#dlgMember').addEventListener('keydown', e => { if (e.key === 'Enter') { e.pr
 
 $('#noticeEditBtn').addEventListener('click', () => {
   $('#noticeInput').value = state.notice.text;
-  $('#noticeView').hidden = true;
-  $('#noticeEdit').hidden = false;
-  $('#noticeEditBtn').hidden = true;
+  $('#noticeErr').textContent = '';
+  $('#dlgNotice').showModal();
   $('#noticeInput').focus();
 });
-function closeNoticeEdit() {
-  $('#noticeView').hidden = false;
-  $('#noticeEdit').hidden = true;
-  $('#noticeEditBtn').hidden = false;
-}
-$('#noticeCancel').addEventListener('click', closeNoticeEdit);
-$('#noticeSave').addEventListener('click', () => {
-  const text = $('#noticeInput').value.trim();
-  closeNoticeEdit();
-  act(() => rpc('set_notice', { p_text: text }), '공지를 저장했습니다');
+$('#noticeCancel').addEventListener('click', () => $('#dlgNotice').close());
+$('#noticeSave').addEventListener('click', async () => {
+  const btn = $('#noticeSave');
+  btn.disabled = true;
+  try {
+    await rpc('set_notice', { p_text: $('#noticeInput').value.trim() });
+    $('#dlgNotice').close();
+    toast('공지를 저장했습니다');
+    await refresh(true);
+  } catch (e) {
+    $('#noticeErr').textContent = errMsg(e);
+  } finally { btn.disabled = false; }
 });
 
 $('#btnRandom').addEventListener('click', randomize);
@@ -1890,6 +1982,12 @@ $('#btnEvalOpen').addEventListener('click', () => {
       opening ? '평가를 열었습니다 — 이제 팀원들이 점수를 입력할 수 있습니다' : '평가를 마감했습니다');
 });
 $('#btnEvalCsv').addEventListener('click', downloadEvalCsv);
+$('#btnIndivOpen').addEventListener('click', () => {
+  if (!state.session) return;
+  const opening = !state.session.individualOpen;
+  act(() => rpc('set_individual_open', { p_open: opening }),
+      opening ? '개별활동을 열었습니다 — 각자 자기 결과물 링크를 제출할 수 있습니다' : '개별활동을 마감했습니다');
+});
 
 const dz = $('#dropzone');
 dz.addEventListener('click', () => $('#fileInput').click());
