@@ -496,12 +496,12 @@ end $$;
 
 create or replace function public.set_my_work(p_link text, p_memo text) returns void
 language plpgsql security definer set search_path = public as $$
-declare v_pid uuid; v_open boolean;
+declare v_pid uuid; v_ok boolean;
 begin
   select pr.person_id into v_pid from profiles pr where pr.uid = auth.uid() and pr.role = 'member';
   if v_pid is null then raise exception 'NOT_ALLOWED'; end if;
-  select individual_open into v_open from sessions where id = public.my_session();
-  if not coalesce(v_open, false) then raise exception 'INDIV_CLOSED'; end if;
+  select (team_count = 0 or individual_open) into v_ok from sessions where id = public.my_session();
+  if not coalesce(v_ok, false) then raise exception 'INDIV_CLOSED'; end if;
   update people set work_link = coalesce(p_link, ''), work_memo = coalesce(p_memo, '') where id = v_pid;
 end $$;
 
@@ -559,7 +559,7 @@ begin
   if not public.is_admin() then raise exception 'NOT_ADMIN'; end if;
   v_sid := public.my_session();
   if v_sid is null then raise exception 'NO_SESSION'; end if;
-  if p_n < 1 or p_n > 15 then raise exception 'BAD_COUNT'; end if;
+  if p_n < 0 or p_n > 15 then raise exception 'BAD_COUNT'; end if;  -- 0 = 개별활동 모드
   update sessions set team_count = p_n where id = v_sid;
   update people set team = null where session_id = v_sid and team >= p_n;
   update people set pin = null where session_id = v_sid and pin >= p_n;

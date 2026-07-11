@@ -509,13 +509,13 @@
       <div class="section-head">Assign <span class="sub">관리자 전용</span></div>
       <div class="toolbar">
         <button class="btn primary" id="btnRandom"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 18h1.4c1.3 0 2.5-.6 3.3-1.7l6.6-8.6c.8-1.1 2-1.7 3.3-1.7H22"></path><path d="m18 2 4 4-4 4"></path><path d="M2 6h1.9c1.5 0 2.9.9 3.6 2.2"></path><path d="M22 18h-5.9c-1.4 0-2.7-.7-3.5-1.8l-.3-.5"></path><path d="m18 14 4 4-4 4"></path></svg>랜덤 배정</button>
-        <span class="count-pill">팀 수 <input type="number" id="teamCount" min="1" max="15"></span>
+        <span class="count-pill" title="0 = 개별활동 모드 (팀 없이 각자 제출)">팀 수 <input type="number" id="teamCount" min="0" max="15"></span>
         <button class="btn" id="btnReset">배정 초기화</button>
         <span class="group-gap"></span>
         <button class="btn" id="btnCsv">CSV 다운로드</button>
         <button class="btn" id="btnCopy">결과 복사</button>
       </div>
-      <div class="hint">이름 칩을 드래그해 팀 이동(자동 고정) · 핀 클릭으로 고정 해제 · 랜덤 배정은 고정 인원을 제외하고 섞습니다</div>
+      <div class="hint" id="assignHint">이름 칩을 드래그해 팀 이동(자동 고정) · 핀 클릭으로 고정 해제 · 랜덤 배정은 고정 인원을 제외하고 섞습니다</div>
       <div class="section-head" style="font-size:16px">Unassigned <span class="sub" id="unCnt"></span></div>
       <div class="pool" id="unassigned"><div class="members"></div></div>
 
@@ -524,7 +524,7 @@
         <button class="btn" id="btnEvalOpen"></button>
         <button class="btn" id="btnEvalCsv">평가 CSV</button>
       </div>
-      <div class="hint">총점 100 = 심사위원(관리자) 90% + 학생 10% — 각 평균(1~10)을 90점/10점 만점으로 환산해 합산합니다. 점수는 [평가 열기]를 누른 동안에만 팀원이 입력할 수 있고 결과는 관리자만 봅니다(팀 블록을 클릭하면 개별 점수 팝업). 주관식 피드백은 언제든 제출 가능하며 팀 카드에 익명으로 공개됩니다.</div>
+      <div class="hint" id="evalHint">총점 100 = 심사위원(관리자) 90% + 학생 10% — 각 평균(1~10)을 90점/10점 만점으로 환산해 합산합니다. 점수는 [평가 열기]를 누른 동안에만 팀원이 입력할 수 있고 결과는 관리자만 봅니다(팀 블록을 클릭하면 개별 점수 팝업). 주관식 피드백은 언제든 제출 가능하며 팀 카드에 익명으로 공개됩니다.</div>
       <div id="evalResults"></div>
     </div>
 
@@ -537,7 +537,6 @@
 
     <div id="indivSection" hidden>
       <div class="section-head">Individual <span class="sub" id="indivSub"></span></div>
-      <div class="toolbar admin-only"><button class="btn" id="btnIndivOpen"></button></div>
       <div id="indivMine"></div>
       <div id="indivList"></div>
     </div>
@@ -796,7 +795,7 @@ const ERR_MAP = {
   NO_SNO_SET: '이 이름은 명단에 학번이 등록되어 있지 않습니다. 관리자에게 학번 등록을 요청하세요.',
   SNO_TAKEN: '이미 같은 학번이 명단에 있습니다.',
   REG_CLOSED: '신규 등록이 마감되었습니다. 관리자에게 문의하세요.',
-  INDIV_CLOSED: '개별활동이 열려 있지 않습니다.',
+  INDIV_CLOSED: '개별활동 모드가 아닙니다. 관리자가 팀 수를 0으로 설정해야 제출할 수 있습니다.',
   NO_TEAM: '아직 팀이 배정되지 않았습니다. 관리자에게 문의하세요.',
   OWN_TEAM: '자기 팀은 평가할 수 없습니다.',
   EVAL_CLOSED: '관리자가 평가를 연 동안에만 점수를 줄 수 있습니다.',
@@ -1065,6 +1064,20 @@ function renderBoard() {
 
   $('#teamsSub').textContent = `${state.teamCount}팀 · ${state.people.filter(p => p.team != null).length}명 배정`;
 
+  // 팀 수 0 = 개별활동 모드: 팀·배정·팀 평가 UI를 통째로 숨김
+  const teamMode = state.teamCount > 0;
+  $('#teamsHeadLabel').closest('.section-head').style.display = teamMode ? '' : 'none';
+  $('#teamsGrid').style.display = teamMode ? '' : 'none';
+  $('#btnRandom').style.display = teamMode ? '' : 'none';
+  $('#btnReset').style.display = teamMode ? '' : 'none';
+  $('#assignHint').style.display = teamMode ? '' : 'none';
+  $('#unCnt').closest('.section-head').style.display = teamMode ? '' : 'none';
+  $('#unassigned').style.display = teamMode ? '' : 'none';
+  $('#evalSub').closest('.section-head').style.display = teamMode ? '' : 'none';
+  $('#btnEvalOpen').closest('.toolbar').style.display = teamMode ? '' : 'none';
+  $('#evalHint').style.display = teamMode ? '' : 'none';
+  $('#evalResults').style.display = teamMode ? '' : 'none';
+
   const grid = $('#teamsGrid');
   const myBox = $('#myTeamBox');
   grid.replaceChildren();
@@ -1303,23 +1316,20 @@ $('#fbSave').addEventListener('click', async () => {
 });
 $('#fbCancel').addEventListener('click', () => $('#dlgFeedback').close());
 
-/* 개별활동: 관리자가 열면 각자 자기 결과물 링크·메모를 제출하고 모두가 열람 */
+/* 개별활동: 팀 수를 0으로 하면 개별 모드 — 각자 자기 결과물 링크·메모를 제출하고 모두가 열람 */
 function renderIndiv() {
   const sec = $('#indivSection');
-  if (!state.session || (!state.session.individualOpen && !isAdmin())) { sec.hidden = true; return; }
-  sec.hidden = false;
-  const open = state.session.individualOpen;
+  const on = state.session && state.teamCount === 0;
+  sec.hidden = !on;
+  if (!on) return;
   const submitted = state.people.filter(p => (p.work_link || '').trim() || (p.work_memo || '').trim());
-  $('#indivSub').textContent = open ? `개별 제출 진행 중 · ${submitted.length}명 제출` : '닫힘 — 관리자에게만 보입니다';
-  const tgl = $('#btnIndivOpen');
-  tgl.textContent = open ? '⏸ 개별활동 마감' : '▶ 개별활동 열기';
-  tgl.classList.toggle('primary', !open);
+  $('#indivSub').textContent = `개별활동 모드 · 제출 ${submitted.length} / ${state.people.length}명`;
 
   // 내 제출 (팀원)
   const mineBox = $('#indivMine');
   mineBox.replaceChildren();
   const p = me();
-  if (open && session.role === 'member' && p) {
+  if (session.role === 'member' && p) {
     const li = el('input', { class: 'pill', value: p.work_link || '', placeholder: '내 결과물 링크 (https://... 또는 도메인)' });
     const mi = el('input', { class: 'pill', value: p.work_memo || '', placeholder: '한 줄 메모 (선택)' });
     const btn = el('button', { class: 'btn sm save-btn', disabled: true, onclick: async () => {
@@ -1353,17 +1363,13 @@ function renderIndiv() {
   for (const q of submitted) {
     const url = normalizeUrl(q.work_link || '');
     list.append(el('div', { class: 'indiv-row' },
-      el('div', { class: 'inm' },
-        q.name,
-        q.team != null && state.teams[q.team]
-          ? el('span', { class: 'tbadge' }, el('span', { class: 'dot', style: `background:${teamColor(q.team)}` }), state.teams[q.team].name)
-          : null),
+      el('div', { class: 'inm' }, q.name),
       /^https?:\/\//.test(url)
         ? el('a', { href: url, target: '_blank', rel: 'noopener' }, url.replace(/^https?:\/\//, ''))
         : el('span', { class: 'none' }, '링크 없음'),
       (q.work_memo || '').trim() ? el('div', { class: 'imemo' }, q.work_memo) : null));
   }
-  if (open && !submitted.length) list.append(el('span', { class: 'eval-note' }, '아직 제출한 사람이 없습니다.'));
+  if (!submitted.length) list.append(el('span', { class: 'eval-note' }, '아직 제출한 사람이 없습니다. 팀원 로그인 후 위에서 링크를 제출하세요.'));
 }
 
 /* 평가 결과 (관리자 전용 섹션) — 총점 100 = 심사위원(관리자) 90% + 학생 10% */
@@ -1469,6 +1475,7 @@ $('#pptInput').addEventListener('change', e => {
 /* ---------- 랜덤 배정 (관리자) ---------- */
 function randomize() {
   const n = state.teamCount;
+  if (!n) { toast('팀 수가 0(개별활동 모드)입니다 — 팀 수를 먼저 정하세요'); return; }
   const assign = state.people.map(p => ({ id: p.id, team: p.pin != null ? p.pin : null, pin: p.pin }));
   const counts = Array(n).fill(0);
   assign.forEach(a => { if (a.team != null) counts[a.team]++; });
@@ -1852,8 +1859,10 @@ $('#btnReset').addEventListener('click', async () => {
   act(() => rpc('reset_assign'), '배정을 초기화했습니다');
 });
 $('#teamCount').addEventListener('change', e => {
-  const n = Math.max(1, Math.min(15, +e.target.value || 1));
-  act(() => rpc('set_team_count', { p_n: n }));
+  const v = parseInt(e.target.value, 10);
+  const n = isNaN(v) ? state.teamCount : Math.max(0, Math.min(15, v));
+  act(() => rpc('set_team_count', { p_n: n }),
+      n === 0 ? '개별활동 모드입니다 — 팀 없이 각자 결과물을 제출합니다' : null);
 });
 $('#btnCsv').addEventListener('click', downloadCsv);
 $('#btnCopy').addEventListener('click', copySummary);
@@ -1982,12 +1991,6 @@ $('#btnEvalOpen').addEventListener('click', () => {
       opening ? '평가를 열었습니다 — 이제 팀원들이 점수를 입력할 수 있습니다' : '평가를 마감했습니다');
 });
 $('#btnEvalCsv').addEventListener('click', downloadEvalCsv);
-$('#btnIndivOpen').addEventListener('click', () => {
-  if (!state.session) return;
-  const opening = !state.session.individualOpen;
-  act(() => rpc('set_individual_open', { p_open: opening }),
-      opening ? '개별활동을 열었습니다 — 각자 자기 결과물 링크를 제출할 수 있습니다' : '개별활동을 마감했습니다');
-});
 
 const dz = $('#dropzone');
 dz.addEventListener('click', () => $('#fileInput').click());
