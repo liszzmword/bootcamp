@@ -707,6 +707,18 @@ begin
     and (evaluator_person = a.o_person or evaluator_uid = a.o_uid);
 end $$;
 
+-- 점수 초기화: 현재 세션의 모든 점수를 지움 (피드백은 유지, 빈 행은 삭제)
+create or replace function public.reset_eval_scores() returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  if not public.is_admin() then raise exception 'NOT_ADMIN'; end if;
+  if public.my_session() is null then raise exception 'NO_SESSION'; end if;
+  update evaluations set score = null, updated_at = now()
+  where session_id = public.my_session() and score is not null;
+  delete from evaluations
+  where session_id = public.my_session() and score is null and trim(comment) = '';
+end $$;
+
 -- 주관식 피드백은 같은 세션 누구나 열람 가능 (점수·작성자는 계속 비공개)
 -- security definer 뷰: evaluations의 RLS를 우회하되 comment만, 본인 세션 것만 노출
 drop view if exists public.team_feedback;

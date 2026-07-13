@@ -523,6 +523,7 @@
       <div class="toolbar">
         <button class="btn" id="btnEvalOpen"></button>
         <button class="btn" id="btnEvalCsv">평가 CSV</button>
+        <button class="btn" id="btnEvalReset">점수 초기화</button>
       </div>
       <div class="hint" id="evalHint">총점 100 = 심사위원(관리자) 90% + 학생 10% — 각 평균(1~10)을 90점/10점 만점으로 환산해 합산합니다. 점수는 [평가 열기]를 누른 동안에만 팀원이 입력할 수 있고 결과는 관리자만 봅니다(팀 블록을 클릭하면 개별 점수 팝업). 주관식 피드백은 언제든 제출 가능하며 팀 카드에 익명으로 공개됩니다.</div>
       <div id="evalResults"></div>
@@ -1991,6 +1992,17 @@ $('#btnEvalOpen').addEventListener('click', () => {
       opening ? '평가를 열었습니다 — 이제 팀원들이 점수를 입력할 수 있습니다' : '평가를 마감했습니다');
 });
 $('#btnEvalCsv').addEventListener('click', downloadEvalCsv);
+$('#btnEvalReset').addEventListener('click', async () => {
+  if (!state.session) return;
+  const cnt = state.evals.filter(e => e.score != null).length;
+  if (!cnt) { toast('초기화할 점수가 없습니다'); return; }
+  if (!await ask({
+    title: '점수 초기화',
+    desc: `모든 팀의 점수 ${cnt}건을 초기화할까요? 주관식 피드백은 유지됩니다. 되돌릴 수 없습니다.`,
+    ok: '초기화',
+  })) return;
+  act(() => rpc('reset_eval_scores'), '점수를 초기화했습니다 — 피드백은 유지됩니다');
+});
 
 const dz = $('#dropzone');
 dz.addEventListener('click', () => $('#fileInput').click());
