@@ -6,3 +6,4 @@ dist/
 *.xlsx
 *.png
 스크린샷*
+tsconfig.tsbuildinfo
