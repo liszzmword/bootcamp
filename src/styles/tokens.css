@@ -1,0 +1,71 @@
+/* ============================================================
+   디자인 토큰 — 3계층
+   Layer 1 (primitive): 리즈워드 브랜드 확정 시 이 블록만 교체
+   Layer 2 (semantic):  컴포넌트는 이 계층만 참조 (Layer 1 직접 참조 금지)
+   ============================================================ */
+:root {
+  /* ---- Layer 1: primitive (브랜드 placeholder) ---- */
+  --brand-primary-500: #111111;
+  --brand-primary-600: #2b2b2b;
+  --brand-accent-500: #1151ff;
+  --gray-0: #ffffff; --gray-50: #f5f5f5; --gray-100: #ededed;
+  --gray-200: #e5e5e5; --gray-300: #cacacb; --gray-400: #9e9ea0;
+  --gray-500: #707072; --gray-700: #39393b; --gray-900: #111111;
+  --red-500: #d30005; --green-600: #007d48; --amber-500: #f5a623;
+  --font-display: "Jost", "Futura", -apple-system, "Apple SD Gothic Neo", sans-serif;
+  --font-body: "Inter", "Helvetica Neue", -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  --radius-unit: 4px;
+
+  /* ---- Layer 2: semantic ---- */
+  --color-bg: var(--gray-0);
+  --color-bg-subtle: var(--gray-50);
+  --color-bg-hover: var(--gray-100);
+  --color-bg-inverse: var(--gray-900);
+  --color-text: var(--gray-900);
+  --color-text-muted: var(--gray-500);
+  --color-text-faint: var(--gray-400);
+  --color-text-inverse: var(--gray-0);
+  --color-border: var(--gray-200);
+  --color-border-strong: var(--gray-300);
+  --color-action: var(--brand-primary-500);
+  --color-action-hover: var(--brand-primary-600);
+  --color-accent: var(--brand-accent-500);
+  --color-live: var(--red-500);
+  --color-danger: var(--red-500);
+  --color-success: var(--green-600);
+  --color-warning: var(--amber-500);
+
+  --radius-sm: calc(var(--radius-unit) * 2);   /* 8  — 입력·칩 */
+  --radius-md: calc(var(--radius-unit) * 4);   /* 16 — 카드·시트 */
+  --radius-full: 9999px;
+
+  --space-1: 4px; --space-2: 8px; --space-3: 12px;
+  --space-4: 16px; --space-6: 24px; --space-8: 32px;
+
+  --size-touch-min: 44px;
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, .06);
+  --shadow-sheet: 0 -8px 32px rgba(0, 0, 0, .12);
+  --shadow-pop: 0 8px 32px rgba(0, 0, 0, .16);
+  --motion-fast: 120ms ease;
+  --motion-base: 200ms ease;
+
+  /* 팀 색상 8색 고정 팔레트 (hsl 회전 대체) */
+  --team-0: #e0533d; --team-1: #2f9e63; --team-2: #8a4fd3; --team-3: #d1a422;
+  --team-4: #d8447c; --team-5: #1d7fd1; --team-6: #d97a1f; --team-7: #4a9a97;
+}
+
+/* 다크 테마 — 프로젝터 뷰 강제 적용 (semantic만 재정의) */
+[data-theme="dark"] {
+  --color-bg: var(--gray-900);
+  --color-bg-subtle: #1c1c1e;
+  --color-bg-hover: #2a2a2c;
+  --color-bg-inverse: var(--gray-0);
+  --color-text: var(--gray-0);
+  --color-text-muted: var(--gray-400);
+  --color-text-faint: var(--gray-500);
+  --color-text-inverse: var(--gray-900);
+  --color-border: var(--gray-700);
+  --color-border-strong: var(--gray-500);
+  --color-action: var(--gray-0);
+  --color-action-hover: var(--gray-200);
+}

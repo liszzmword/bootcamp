@@ -1,0 +1,140 @@
+/* 관리자 라이브·평가·퀴즈·메시지·아카이브 공용 스타일 — 접두사 al-, semantic 토큰만 */
+.al-page { display: flex; flex-direction: column; gap: var(--space-4); padding-bottom: var(--space-8); }
+.al-grid { display: grid; gap: var(--space-4); grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); align-items: start; }
+.al-cols { display: grid; gap: var(--space-6); grid-template-columns: 1fr 1fr; align-items: start; }
+@media (max-width: 900px) { .al-cols { grid-template-columns: 1fr; } }
+.al-card {
+  background: var(--color-bg); border: 1px solid var(--color-border);
+  border-radius: var(--radius-md); box-shadow: var(--shadow-card);
+  padding: var(--space-4); display: flex; flex-direction: column; gap: var(--space-3);
+  min-width: 0;
+}
+.al-card-title { font-size: 16px; }
+.al-row { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; min-width: 0; }
+.al-stack { display: flex; flex-direction: column; gap: var(--space-2); }
+.al-muted { color: var(--color-text-muted); font-size: 13px; }
+.al-pre { white-space: pre-wrap; word-break: break-word; font-size: 14px; }
+.al-select {
+  border: 1px solid var(--color-border); background: var(--color-bg); color: var(--color-text);
+  border-radius: var(--radius-sm); min-height: 40px; padding: 0 10px; max-width: 100%;
+}
+.al-check { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px; }
+.al-check input[type="checkbox"], .al-check input[type="radio"] { width: 18px; height: 18px; accent-color: var(--color-accent); }
+.al-range { accent-color: var(--color-accent); flex: 1; min-width: 120px; }
+.al-icon-btn {
+  width: 32px; height: 32px; flex-shrink: 0; border: 1px solid var(--color-border);
+  background: var(--color-bg); color: var(--color-text); border-radius: var(--radius-sm);
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.al-icon-btn:hover { background: var(--color-bg-hover); }
+.al-icon-btn:disabled { opacity: .35; cursor: default; }
+
+/* ---------- 발표 순서 ---------- */
+.al-order-list { display: flex; flex-direction: column; gap: 6px; }
+.al-order-item {
+  display: flex; align-items: center; gap: var(--space-2);
+  border: 1px solid var(--color-border); border-radius: var(--radius-sm);
+  padding: 6px 10px; background: var(--color-bg);
+}
+.al-order-item.is-current { border-color: var(--color-live); background: var(--color-bg-subtle); }
+.al-order-item.is-done { opacity: .5; }
+.al-order-num { min-width: 20px; text-align: center; font-weight: 700; font-size: 13px; color: var(--color-text-muted); }
+.al-order-name { flex: 1; display: flex; align-items: center; gap: 8px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ---------- 진행/타이머 ---------- */
+.al-current {
+  display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap;
+  padding: var(--space-4); border-radius: var(--radius-md); background: var(--color-bg-subtle);
+}
+.al-current-name { font-family: var(--font-display); font-size: 26px; font-weight: 600; }
+.al-timer { font-family: var(--font-display); font-size: 44px; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1; }
+.al-timer.is-over { color: var(--color-danger); }
+.al-timer-sm { font-variant-numeric: tabular-nums; font-weight: 700; font-size: 13px; }
+
+/* ---------- 표시 상태 세그(라디오) ---------- */
+.al-seg { display: flex; flex-wrap: wrap; gap: 6px; }
+.al-seg-item {
+  position: relative; border: 1px solid var(--color-border); border-radius: var(--radius-full);
+  padding: 8px 14px; font-size: 13px; font-weight: 500; cursor: pointer; user-select: none;
+}
+.al-seg-item:hover { background: var(--color-bg-hover); }
+.al-seg-item.is-on { background: var(--color-action); border-color: var(--color-action); color: var(--color-text-inverse); }
+.al-seg-item input { position: absolute; opacity: 0; pointer-events: none; }
+
+/* ---------- 테이블 ---------- */
+.al-scroll { overflow-x: auto; }
+.al-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.al-table th {
+  text-align: left; font-size: 12px; color: var(--color-text-muted); font-weight: 600;
+  padding: 8px 10px; border-bottom: 1px solid var(--color-border-strong); white-space: nowrap;
+}
+.al-table td { padding: 8px 10px; border-bottom: 1px solid var(--color-border); white-space: nowrap; }
+.al-table tr.al-clickable { cursor: pointer; }
+.al-table tr.al-clickable:hover td { background: var(--color-bg-hover); }
+.al-num { font-variant-numeric: tabular-nums; }
+.al-rank { font-weight: 700; color: var(--color-text-muted); }
+.al-clickable-row { cursor: pointer; }
+
+/* ---------- 퀴즈 ---------- */
+.al-quiz-item {
+  border: 1px solid var(--color-border); border-radius: var(--radius-sm);
+  padding: var(--space-3); display: flex; flex-direction: column; gap: var(--space-2);
+}
+.al-quiz-head { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; }
+.al-quiz-q { flex: 1; min-width: 120px; font-weight: 500; word-break: break-word; }
+.al-quiz-detail { display: flex; flex-direction: column; gap: 6px; border-top: 1px dashed var(--color-border); padding-top: var(--space-2); }
+.al-dist-row { display: grid; grid-template-columns: minmax(110px, 1fr) minmax(70px, 2fr) 44px; align-items: center; gap: var(--space-2); font-size: 13px; }
+.al-dist-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.al-dist-label.is-correct { color: var(--color-success); font-weight: 700; }
+.al-bar-track { height: 14px; background: var(--color-bg-subtle); border-radius: var(--radius-full); overflow: hidden; }
+.al-bar-fill { height: 100%; background: var(--color-accent); border-radius: var(--radius-full); transition: width var(--motion-base); }
+.al-bar-fill.is-correct { background: var(--color-success); }
+.al-dist-count { text-align: right; color: var(--color-text-muted); font-variant-numeric: tabular-nums; }
+.al-team-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: var(--space-2); }
+.al-team-card {
+  border: 1px solid var(--color-border); border-radius: var(--radius-sm);
+  padding: var(--space-3); display: flex; flex-direction: column; gap: 4px;
+}
+.al-team-pts { font-family: var(--font-display); font-size: 24px; font-weight: 600; }
+
+/* ---------- DM ---------- */
+.al-thread {
+  display: flex; align-items: center; gap: var(--space-3); width: 100%; text-align: left;
+  background: none; border: none; border-bottom: 1px solid var(--color-border);
+  padding: var(--space-3) var(--space-2); color: var(--color-text); min-height: var(--size-touch-min);
+}
+.al-thread:hover { background: var(--color-bg-hover); }
+.al-thread:last-child { border-bottom: none; }
+.al-thread-name { font-weight: 600; white-space: nowrap; }
+.al-thread-last { color: var(--color-text-muted); font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; min-width: 0; }
+.al-unread { background: var(--color-live); color: #fff; font-size: 11px; font-weight: 700; border-radius: var(--radius-full); padding: 2px 8px; flex-shrink: 0; }
+.al-bubbles { display: flex; flex-direction: column; gap: 6px; max-height: 44dvh; overflow-y: auto; padding: var(--space-2) 0; }
+.al-bubble {
+  max-width: 82%; align-self: flex-start; background: var(--color-bg-subtle);
+  border-radius: var(--radius-md); padding: 8px 12px; font-size: 14px;
+  white-space: pre-wrap; word-break: break-word;
+}
+.al-bubble.is-admin { align-self: flex-end; background: var(--color-action); color: var(--color-text-inverse); }
+.al-bubble-time { display: block; font-size: 11px; opacity: .6; margin-top: 2px; }
+
+/* ---------- 공지 ---------- */
+.al-notice {
+  border: 1px solid var(--color-border); border-radius: var(--radius-sm);
+  padding: var(--space-3); display: flex; flex-direction: column; gap: var(--space-2);
+}
+.al-notice.is-pinned { border-color: var(--color-border-strong); background: var(--color-bg-subtle); }
+
+/* ---------- 변경 이력 / 상세 리스트 ---------- */
+.al-hist { display: flex; flex-direction: column; }
+.al-hist-item { padding: var(--space-3) 0; border-bottom: 1px solid var(--color-border); display: flex; flex-direction: column; gap: 4px; }
+.al-hist-item:last-child { border-bottom: none; }
+.al-hist-meta { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; font-size: 13px; }
+.al-change { display: flex; align-items: baseline; gap: 6px; font-size: 13px; flex-wrap: wrap; }
+.al-change-field { font-weight: 700; }
+.al-change-old { color: var(--color-text-faint); text-decoration: line-through; word-break: break-all; }
+.al-change-new { word-break: break-all; }
+
+/* ---------- 자료 일람 ---------- */
+.al-kv { display: grid; grid-template-columns: 64px 1fr; gap: 4px var(--space-2); font-size: 14px; margin: 0; }
+.al-kv dt { color: var(--color-text-muted); font-size: 13px; }
+.al-kv dd { margin: 0; min-width: 0; word-break: break-all; }

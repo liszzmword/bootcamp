@@ -1,0 +1,331 @@
+/* ============================================================
+   관리자 코어 — 사이드바 레이아웃 · 타일 · 테이블 (접두사 adm-)
+   semantic 토큰만 참조
+   ============================================================ */
+
+/* ---------- 셸: 좌측 사이드바 + 본문 ---------- */
+.adm-shell {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  min-height: 100dvh;
+}
+.adm-side {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-6) var(--space-4);
+  border-right: 1px solid var(--color-border);
+  background: var(--color-bg-subtle);
+  position: sticky;
+  top: 0;
+  height: 100dvh;
+  overflow-y: auto;
+}
+.adm-brand {
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+}
+.adm-session-select {
+  width: 100%;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+  color: var(--color-text);
+  padding: 8px 10px;
+  min-height: var(--size-touch-min);
+}
+.adm-session-select:focus { outline: 2px solid var(--color-accent); outline-offset: 1px; }
+
+.adm-nav { display: flex; flex-direction: column; gap: 2px; }
+.adm-nav-link {
+  display: block;
+  padding: 9px 12px;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-muted);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background var(--motion-fast), color var(--motion-fast);
+  white-space: nowrap;
+}
+.adm-nav-link:hover { background: var(--color-bg-hover); color: var(--color-text); }
+.adm-nav-link.is-active {
+  background: var(--color-action);
+  color: var(--color-text-inverse);
+}
+.adm-side-foot { margin-top: auto; }
+
+.adm-main {
+  padding: var(--space-6) var(--space-8);
+  max-width: 1080px;
+  width: 100%;
+  min-width: 0;
+}
+
+/* ---------- 모바일(<900px): 사이드바 → 상단 가로 스크롤 탭 ---------- */
+@media (max-width: 899px) {
+  .adm-shell { grid-template-columns: 1fr; }
+  .adm-side {
+    flex-direction: row;
+    align-items: center;
+    height: auto;
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    padding: var(--space-2) var(--space-3);
+    border-right: none;
+    border-bottom: 1px solid var(--color-border);
+    overflow-x: auto;
+    overflow-y: hidden;
+    gap: var(--space-2);
+  }
+  .adm-brand { display: none; }
+  .adm-session-select { width: auto; max-width: 140px; flex-shrink: 0; min-height: 38px; }
+  .adm-nav { flex-direction: row; gap: 2px; }
+  .adm-nav-link { padding: 8px 10px; font-size: 13px; }
+  .adm-side-foot { margin-top: 0; margin-left: auto; flex-shrink: 0; }
+  .adm-main { padding: var(--space-4); }
+}
+
+/* ---------- 세션 없음 안내 (선택/생성) ---------- */
+.adm-nosession {
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-6);
+}
+.adm-nosession-box { width: min(440px, 94vw); }
+.adm-nosession-box h1 {
+  font-size: 34px;
+  line-height: 1.05;
+  text-transform: uppercase;
+  margin-bottom: var(--space-3);
+}
+.adm-session-list { display: flex; flex-direction: column; gap: var(--space-2); margin: var(--space-4) 0; }
+.adm-session-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  width: 100%;
+  text-align: left;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+  color: var(--color-text);
+  padding: 12px 16px;
+  min-height: var(--size-touch-min);
+  font-weight: 500;
+  transition: background var(--motion-fast);
+}
+.adm-session-item:hover { background: var(--color-bg-hover); }
+.adm-session-item .adm-session-date { color: var(--color-text-faint); font-size: 12px; font-weight: 400; }
+
+/* ---------- 대시보드 타일 ---------- */
+.adm-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--space-3);
+}
+.adm-tile {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-align: left;
+  color: var(--color-text);
+}
+button.adm-tile { transition: background var(--motion-fast); }
+button.adm-tile:hover { background: var(--color-bg-hover); }
+.adm-tile-num {
+  font-family: var(--font-display);
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1.1;
+}
+.adm-tile-num small { font-size: 15px; color: var(--color-text-faint); font-weight: 500; }
+.adm-tile-label { color: var(--color-text-muted); font-size: 13px; }
+.adm-tile-sub { color: var(--color-text-faint); font-size: 12px; }
+.adm-tile.is-alert .adm-tile-num { color: var(--color-danger); }
+
+.adm-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+
+/* ---------- QR ---------- */
+.adm-qr-wrap { display: flex; flex-direction: column; align-items: center; gap: var(--space-3); }
+.adm-qr { width: min(300px, 78vw); }
+.adm-qr svg { display: block; width: 100%; height: auto; border-radius: var(--radius-sm); }
+.adm-qr-code {
+  font-family: var(--font-display);
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: 4px;
+  text-align: center;
+}
+.adm-qr-url { color: var(--color-text-faint); font-size: 12px; word-break: break-all; text-align: center; }
+
+/* ---------- 공지 목록 (대시보드) ---------- */
+.adm-notice {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--color-border);
+}
+.adm-notice p {
+  flex: 1;
+  min-width: 0;
+  white-space: pre-wrap;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.adm-notice time { color: var(--color-text-faint); font-size: 12px; flex-shrink: 0; }
+
+/* ---------- 카드 (설정 등 섹션 묶음) ---------- */
+.adm-card {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+  padding: var(--space-4) var(--space-6);
+  margin-bottom: var(--space-4);
+}
+.adm-card h3 { font-size: 16px; margin-bottom: var(--space-1); }
+.adm-card-desc { color: var(--color-text-muted); font-size: 13px; margin-bottom: var(--space-3); }
+.adm-card.is-danger { border-color: var(--color-danger); }
+.adm-card.is-danger h3 { color: var(--color-danger); }
+
+.adm-field-row { display: flex; gap: var(--space-2); align-items: center; }
+.adm-field-row .field { flex: 1; min-width: 0; }
+.adm-field-row .field.is-short { flex: 0 0 96px; }
+
+.adm-note { color: var(--color-text-muted); font-size: 13px; margin-top: var(--space-2); }
+.adm-note.is-warn { color: var(--color-warning); font-weight: 500; }
+
+/* ---------- 토글 스위치 ---------- */
+.adm-switch {
+  width: 48px;
+  height: 28px;
+  border-radius: var(--radius-full);
+  border: none;
+  background: var(--color-border-strong);
+  position: relative;
+  flex-shrink: 0;
+  transition: background var(--motion-fast);
+  padding: 0;
+}
+.adm-switch::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--color-bg);
+  box-shadow: var(--shadow-card);
+  transition: transform var(--motion-fast);
+}
+.adm-switch.is-on { background: var(--color-success); }
+.adm-switch.is-on::after { transform: translateX(20px); }
+.adm-switch-row { display: flex; align-items: center; gap: var(--space-3); }
+.adm-switch-row .adm-switch-label { flex: 1; }
+
+/* ---------- 명단 업로드 드롭존 ---------- */
+.adm-dropzone {
+  border: 2px dashed var(--color-border-strong);
+  border-radius: var(--radius-md);
+  padding: var(--space-6);
+  text-align: center;
+  color: var(--color-text-muted);
+  font-size: 14px;
+  cursor: pointer;
+  transition: border-color var(--motion-fast), background var(--motion-fast);
+}
+.adm-dropzone:hover { background: var(--color-bg-subtle); }
+.adm-dropzone.is-over { border-color: var(--color-accent); background: var(--color-bg-subtle); }
+.adm-dropzone strong { color: var(--color-text); }
+
+/* ---------- 테이블 ---------- */
+.adm-table-wrap { overflow-x: auto; }
+.adm-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.adm-table th {
+  text-align: left;
+  color: var(--color-text-faint);
+  font-size: 12px;
+  font-weight: 500;
+  padding: var(--space-2) var(--space-2);
+  border-bottom: 1px solid var(--color-border);
+  white-space: nowrap;
+}
+.adm-table td {
+  padding: var(--space-2) var(--space-2);
+  border-bottom: 1px solid var(--color-border);
+  vertical-align: middle;
+}
+.adm-table tr:hover td { background: var(--color-bg-subtle); }
+.adm-table .adm-cell-name { font-weight: 600; white-space: nowrap; }
+.adm-table .adm-cell-muted { color: var(--color-text-muted); }
+.adm-cell-btn {
+  background: none;
+  border: none;
+  padding: 2px 4px;
+  color: var(--color-text-muted);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  font-size: 13px;
+}
+.adm-cell-btn:hover { color: var(--color-text); }
+.adm-cell-btn.is-danger { color: var(--color-danger); text-decoration: none; }
+.adm-row-actions { display: flex; gap: var(--space-1); justify-content: flex-end; white-space: nowrap; }
+.adm-team-select {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+  color: var(--color-text);
+  padding: 6px 8px;
+  min-height: 36px;
+  max-width: 130px;
+}
+.adm-pin {
+  background: none;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  color: var(--color-accent);
+}
+.adm-pin:hover { border-color: var(--color-border-strong); }
+
+/* ---------- 팀 요약 칩 ---------- */
+.adm-chips { display: flex; flex-wrap: wrap; gap: var(--space-2); margin: var(--space-3) 0; }
+.adm-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  padding: 4px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  background: var(--color-bg);
+}
+.adm-chip .adm-chip-cnt { color: var(--color-text-muted); font-weight: 400; }
+
+.adm-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+  margin: var(--space-3) 0;
+}
+.adm-toolbar .adm-search { flex: 1; min-width: 160px; }
+.adm-stats { color: var(--color-text-muted); font-size: 13px; }

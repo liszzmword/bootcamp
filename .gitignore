@@ -1,6 +1,8 @@
 .DS_Store
 node_modules/
 .vercel/
+dist/
+.env.local
 *.xlsx
 *.png
 스크린샷*

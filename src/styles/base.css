@@ -1,0 +1,24 @@
+@import "./tokens.css";
+
+* { box-sizing: border-box; margin: 0; }
+html, body, #root { height: 100%; }
+body {
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.5;
+  background: var(--color-bg);
+  color: var(--color-text);
+  -webkit-font-smoothing: antialiased;
+}
+a { color: var(--color-text); }
+button { font: inherit; cursor: pointer; }
+input, select, textarea { font: inherit; }
+
+/* iOS: 16px 미만 입력 포커스 시 강제 확대 방지 */
+@media (max-width: 640px) {
+  input, select, textarea { font-size: 16px; }
+}
+
+h1, h2, h3 { font-family: var(--font-display); letter-spacing: .3px; }
+
+::selection { background: var(--color-accent); color: #fff; }

@@ -1,0 +1,188 @@
+/* 프로젝터 화면 — 'pr-' 접두사, 다크 전제 초대형 타이포, semantic 토큰만 참조 */
+
+.pr-root {
+  min-height: 100dvh;
+  background: var(--color-bg);
+  color: var(--color-text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4vmin;
+  overflow: hidden;
+}
+.pr-stage {
+  width: min(1400px, 100%);
+  animation: pr-fade 400ms ease;
+}
+@keyframes pr-fade {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: none; }
+}
+.pr-center { text-align: center; }
+.pr-empty { color: var(--color-text-faint); font-size: 28px; text-align: center; }
+.pr-stage-label {
+  font-size: clamp(24px, 3vw, 40px);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: var(--color-text-muted);
+  text-align: center;
+  margin-bottom: 4vmin;
+}
+
+/* ---------- [idle] 세션명 + QR + 참여코드 ---------- */
+.pr-idle {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3vmin;
+  text-align: center;
+}
+.pr-session-name {
+  font-size: clamp(48px, 8vw, 110px);
+  line-height: 1.02;
+  overflow-wrap: anywhere;
+}
+.pr-qr {
+  background: #fff;
+  padding: 2.5vmin;
+  border-radius: var(--radius-md);
+  width: min(38vmin, 340px);
+}
+.pr-qr svg { display: block; width: 100%; height: auto; }
+.pr-code {
+  font-family: var(--font-display);
+  font-size: clamp(56px, 10vw, 140px);
+  font-weight: 700;
+  letter-spacing: .12em;
+  line-height: 1;
+}
+.pr-hint { color: var(--color-text-muted); font-size: clamp(16px, 1.8vw, 24px); }
+
+/* ---------- [order] 발표 순서 ---------- */
+.pr-order-list {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: 1.6vmin;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+.pr-order-row {
+  display: flex;
+  align-items: center;
+  gap: 2.4vmin;
+  padding: 1.6vmin 3vmin;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+}
+.pr-order-name {
+  font-family: var(--font-display);
+  font-size: clamp(60px, 5.5vmin, 76px);
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+}
+.pr-order-no {
+  width: 2ch;
+  flex-shrink: 0;
+  text-align: center;
+  font-size: clamp(28px, 3vmin, 40px);
+  font-weight: 700;
+  color: var(--color-text-faint);
+}
+.pr-order-row.pr-done { opacity: .38; }
+.pr-order-row.pr-done .pr-order-no { color: var(--color-success); }
+.pr-order-row.pr-cur {
+  border-color: var(--color-live);
+  box-shadow: 0 0 0 2px var(--color-live);
+}
+.pr-order-row.pr-cur .pr-order-no { color: var(--color-live); }
+
+/* ---------- [live] 발표 중 ---------- */
+.pr-live {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2.4vmin;
+  text-align: center;
+}
+.pr-now {
+  font-family: var(--font-display);
+  font-size: clamp(20px, 2.6vw, 34px);
+  font-weight: 700;
+  letter-spacing: .3em;
+  color: var(--color-live);
+}
+.pr-live-name {
+  font-size: clamp(64px, 10vw, 120px);
+  line-height: 1.02;
+  overflow-wrap: anywhere;
+}
+.pr-live-members { color: var(--color-text-muted); font-size: clamp(20px, 2.6vw, 34px); }
+.pr-timer {
+  font-family: var(--font-display);
+  font-variant-numeric: tabular-nums;
+  font-size: clamp(72px, 12vw, 160px);
+  font-weight: 700;
+  line-height: 1;
+}
+.pr-timer.pr-over { color: var(--color-live); animation: pr-blink 1s step-end infinite; }
+@keyframes pr-blink { 50% { opacity: .45; } }
+.pr-next { color: var(--color-text-muted); font-size: clamp(22px, 3vw, 40px); font-weight: 500; }
+
+/* ---------- [leaderboard] 리더보드 ---------- */
+.pr-board { max-width: 1100px; margin: 0 auto; }
+.pr-bars { list-style: none; padding: 0; display: grid; gap: 1.3vmin; }
+.pr-bar-row {
+  display: grid;
+  grid-template-columns: 2.4ch minmax(16ch, auto) 1fr 6ch;
+  align-items: center;
+  gap: 1.6vmin;
+  font-size: clamp(20px, 2.6vmin, 32px);
+}
+.pr-rank {
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: var(--color-text-faint);
+  text-align: center;
+}
+.pr-bar-name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pr-bar-team {
+  font-style: normal;
+  color: var(--color-text-muted);
+  font-size: .68em;
+  margin-left: 1ch;
+}
+.pr-bar-track {
+  background: var(--color-bg-subtle);
+  border-radius: var(--radius-full);
+  height: 2.6vmin;
+  min-height: 14px;
+  overflow: hidden;
+}
+.pr-bar-fill {
+  display: block;
+  height: 100%;
+  border-radius: var(--radius-full);
+  transition: width var(--motion-base);
+}
+.pr-bar-pts { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
+
+.pr-team-totals {
+  display: flex;
+  justify-content: center;
+  gap: 3vmin;
+  margin-top: 4vmin;
+  flex-wrap: wrap;
+}
+.pr-team-total {
+  display: flex;
+  align-items: center;
+  gap: 1.4vmin;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 1.6vmin 2.6vmin;
+  font-size: clamp(22px, 3vmin, 36px);
+}
+.pr-total-dot { width: .7em; height: .7em; border-radius: 50%; flex-shrink: 0; }
+.pr-total-name { font-family: var(--font-display); font-weight: 600; }
+.pr-total-pts { font-variant-numeric: tabular-nums; color: var(--color-text-muted); }
