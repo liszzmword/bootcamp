@@ -4,7 +4,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { deletePpt, pptDownloadUrl, setMyWork, updateTeamField, uploadPpt } from '@/api';
 import { Button, ConfirmSheet, Dot, EmptyState, SectionHead, TextArea, TextInput, SaveButton, useSaveField } from '@/components/ui';
 import { errMsg } from '@/lib/errors';
-import { fmtDate, fmtSize, isHttpUrl, normalizeUrl, teamColor } from '@/lib/format';
+import { ACCENT, fmtDate, fmtSize, isHttpUrl, normalizeUrl, teamColor } from '@/lib/format';
 import { toast } from '@/hooks/useStore';
 import { useProfile } from '@/hooks/useProfile';
 import { useSessionData } from '@/hooks/useSessionData';
@@ -101,7 +101,7 @@ function TeamCard({ session, team, members, feedback }: {
   return (
     <div className="st-card team-card">
       <div className="team-title">
-        <Dot color={teamColor(team.idx)} />
+        <Dot color={ACCENT} />
         <h3>{team.name}</h3>
       </div>
       <div className="chip-row">

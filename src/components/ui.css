@@ -1,7 +1,7 @@
 /* ---------- Button ---------- */
 .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-  border: none; border-radius: var(--radius-full); font-weight: 500;
+  border: none; border-radius: var(--radius-sm); font-weight: 500;
   min-height: var(--size-touch-min); padding: 0 var(--space-6);
   background: var(--color-bg-subtle); color: var(--color-text);
   transition: background var(--motion-fast), transform var(--motion-fast);
@@ -80,18 +80,19 @@ textarea.field { min-height: 88px; resize: vertical; }
 /* ---------- 기타 ---------- */
 .empty-state { color: var(--color-text-faint); font-size: 14px; padding: var(--space-8) 0; text-align: center; }
 .team-dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+/* DS: 배경 배지 → 텍스트 배지 (고정·LIVE·관리자 = 오렌지 텍스트) */
 .badge {
   display: inline-flex; align-items: center; gap: 4px;
   font-size: 11px; font-weight: 700; letter-spacing: .5px;
-  border-radius: var(--radius-full); padding: 3px 10px;
-  background: var(--color-bg-subtle); color: var(--color-text-muted);
+  border-radius: 2px; padding: 3px 0;
+  background: none; color: var(--color-text-muted);
 }
-.badge-live { background: var(--color-live); color: #fff; }
-.badge-live::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: #fff; animation: pulse 1.2s infinite; }
-.badge-success { background: var(--color-success); color: #fff; }
-.badge-warning { background: var(--color-warning); color: #fff; }
+.badge-live { color: var(--color-live); }
+.badge-live::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; animation: pulse 1.2s infinite; }
+.badge-success { color: var(--color-success); }
+.badge-warning { color: var(--color-warning); }
 @keyframes pulse { 50% { opacity: .3; } }
 .section-head { display: flex; align-items: baseline; gap: var(--space-3); margin: var(--space-8) 0 var(--space-4); }
-.section-head h2 { font-size: 22px; text-transform: uppercase; }
+.section-head h2 { font-size: 13px; font-weight: 600; color: var(--color-text-muted); }
 .section-sub { color: var(--color-text-muted); font-size: 13px; }
 .section-right { margin-left: auto; }

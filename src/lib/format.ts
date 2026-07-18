@@ -9,9 +9,10 @@ export const fmtDate = (iso: string | null | undefined): string =>
 export const fmtTime = (iso: string | null | undefined): string =>
   iso ? new Date(iso).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }) : '';
 
-/** 8색 고정 팔레트 (tokens.css --team-N과 동기) */
-export const TEAM_COLORS = ['#e0533d', '#2f9e63', '#8a4fd3', '#d1a422', '#d8447c', '#1d7fd1', '#d97a1f', '#4a9a97'];
-export const teamColor = (i: number): string => TEAM_COLORS[((i % 8) + 8) % 8];
+/** DS: 팀 구분색 폐기 — 무채색 통일, '내 팀/현재 항목'만 ACCENT 사용 (tokens.css --team-N과 동기) */
+export const TEAM_COLORS = ['#2b2b2b'];
+export const teamColor = (_i: number): string => '#2b2b2b';
+export const ACCENT = '#ff7120';
 
 /** 스킴 없는 주소(myapp.vercel.app)에 https:// 보정. javascript: 등 다른 스킴은 그대로(링크화 안 함) */
 export function normalizeUrl(v: string | null | undefined): string {

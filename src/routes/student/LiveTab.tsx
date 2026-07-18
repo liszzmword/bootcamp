@@ -4,7 +4,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { submitEvalComment, submitEvalScore } from '@/api';
 import { Badge, Button, Dot, EmptyState, SectionHead, Sheet, TextArea } from '@/components/ui';
 import { errMsg } from '@/lib/errors';
-import { isHttpUrl, normalizeUrl, teamColor } from '@/lib/format';
+import { ACCENT, isHttpUrl, normalizeUrl, teamColor } from '@/lib/format';
 import { toast } from '@/hooks/useStore';
 import { useProfile } from '@/hooks/useProfile';
 import { useSessionData } from '@/hooks/useSessionData';
@@ -127,7 +127,7 @@ export default function LiveTab() {
               <li key={t.idx} className={`tl-item tl-${st}`}>
                 <span className="tl-num">{i + 1}</span>
                 <span className="tl-name">
-                  <Dot color={teamColor(t.idx)} />
+                  <Dot color={t.idx === myTeamIdx ? ACCENT : teamColor(t.idx)} />
                   {t.name}
                   {t.idx === myTeamIdx && <span className="muted"> (내 팀)</span>}
                 </span>

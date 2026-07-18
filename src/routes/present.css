@@ -1,4 +1,4 @@
-/* 프로젝터 화면 — 'pr-' 접두사, 다크 전제 초대형 타이포, semantic 토큰만 참조 */
+/* 프로젝터 화면 — 'pr-' 접두사, 라이트 초대형 타이포, semantic 토큰만 참조 */
 
 .pr-root {
   min-height: 100dvh;
@@ -39,20 +39,22 @@
 }
 .pr-session-name {
   font-size: clamp(48px, 8vw, 110px);
+  font-weight: 900;
   line-height: 1.02;
   overflow-wrap: anywhere;
 }
 .pr-qr {
   background: #fff;
   padding: 2.5vmin;
-  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  border-radius: 0;
   width: min(38vmin, 340px);
 }
 .pr-qr svg { display: block; width: 100%; height: auto; }
 .pr-code {
   font-family: var(--font-display);
   font-size: clamp(56px, 10vw, 140px);
-  font-weight: 700;
+  font-weight: 900;
   letter-spacing: .12em;
   line-height: 1;
 }
@@ -92,8 +94,7 @@
 .pr-order-row.pr-done { opacity: .38; }
 .pr-order-row.pr-done .pr-order-no { color: var(--color-success); }
 .pr-order-row.pr-cur {
-  border-color: var(--color-live);
-  box-shadow: 0 0 0 2px var(--color-live);
+  border-color: var(--color-text); /* DS: 링 제거 — 검정 보더 + 번호만 오렌지 */
 }
 .pr-order-row.pr-cur .pr-order-no { color: var(--color-live); }
 
@@ -114,6 +115,7 @@
 }
 .pr-live-name {
   font-size: clamp(64px, 10vw, 120px);
+  font-weight: 900;
   line-height: 1.02;
   overflow-wrap: anywhere;
 }
@@ -122,7 +124,7 @@
   font-family: var(--font-display);
   font-variant-numeric: tabular-nums;
   font-size: clamp(72px, 12vw, 160px);
-  font-weight: 700;
+  font-weight: 900;
   line-height: 1;
 }
 .pr-timer.pr-over { color: var(--color-live); animation: pr-blink 1s step-end infinite; }
@@ -154,7 +156,7 @@
 }
 .pr-bar-track {
   background: var(--color-bg-subtle);
-  border-radius: var(--radius-full);
+  border-radius: 0; /* DS: 바 각지게 */
   height: 2.6vmin;
   min-height: 14px;
   overflow: hidden;
@@ -162,7 +164,7 @@
 .pr-bar-fill {
   display: block;
   height: 100%;
-  border-radius: var(--radius-full);
+  border-radius: 0;
   transition: width var(--motion-base);
 }
 .pr-bar-pts { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }

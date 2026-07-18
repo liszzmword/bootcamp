@@ -32,7 +32,7 @@
   padding: var(--space-4);
   box-shadow: var(--shadow-card);
 }
-.jd-card-live { border-color: var(--color-live); box-shadow: 0 0 0 1px var(--color-live); }
+.jd-card-live { border-color: var(--color-text); } /* DS: 링 대신 검정 1px 보더 (목업 1g) */
 .jd-card-head { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; }
 .jd-team-name { font-family: var(--font-display); font-size: 18px; font-weight: 600; }
 .jd-members { color: var(--color-text-muted); font-size: 13px; margin-top: var(--space-1); overflow-wrap: anywhere; }

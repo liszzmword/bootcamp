@@ -8,7 +8,7 @@ import { getSessionCode, getSessions } from '@/api';
 import { useProfile } from '@/hooks/useProfile';
 import { useSessionData } from '@/hooks/useSessionData';
 import { orderedTeams, useQuizPoints } from '@/hooks/useData';
-import { teamColor } from '@/lib/format';
+import { ACCENT, teamColor } from '@/lib/format';
 import type { QuizPoint, SessionRow, Team } from '@/types/domain';
 import './present.css';
 
@@ -57,7 +57,7 @@ function Leaderboard({ session, points, teams }: { session: SessionRow; points: 
               <span className="pr-bar-track">
                 <span
                   className="pr-bar-fill"
-                  style={{ width: `${Math.max(4, (p.points / max) * 100)}%`, background: p.team != null ? teamColor(p.team) : 'var(--color-text-muted)' }}
+                  style={{ width: `${Math.max(4, (p.points / max) * 100)}%`, background: i === 0 ? ACCENT : '#2b2b2b' }}
                 />
               </span>
               <span className="pr-bar-pts">{p.points}점</span>
@@ -110,17 +110,6 @@ export default function PresentPage() {
       try { return localStorage.getItem('joinCode'); } catch { return null; }
     },
   });
-
-  // 다크 테마 강제 (언마운트 시 원복)
-  useEffect(() => {
-    const root = document.documentElement;
-    const prev = root.dataset.theme;
-    root.dataset.theme = 'dark';
-    return () => {
-      if (prev == null) delete root.dataset.theme;
-      else root.dataset.theme = prev;
-    };
-  }, []);
 
   const qrSvg = useMemo(() => {
     if (!joinCode) return null;

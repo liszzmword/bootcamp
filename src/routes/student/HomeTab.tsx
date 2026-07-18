@@ -3,7 +3,7 @@ import { useProfile } from '@/hooks/useProfile';
 import { useSessionData } from '@/hooks/useSessionData';
 import { useNotices, useQuizPoints, orderedTeams } from '@/hooks/useData';
 import { Badge, EmptyState, SectionHead, Dot } from '@/components/ui';
-import { fmtDate, teamColor } from '@/lib/format';
+import { ACCENT, fmtDate } from '@/lib/format';
 
 export default function HomeTab() {
   const { data: prof } = useProfile();
@@ -105,7 +105,7 @@ export default function HomeTab() {
                 {individual ? (
                   '개별활동'
                 ) : myTeam ? (
-                  <span className="team-inline"><Dot color={teamColor(myTeam.idx)} />{myTeam.name}</span>
+                  <span className="team-inline"><Dot color={ACCENT} />{myTeam.name}</span>
                 ) : (
                   '미배정'
                 )}

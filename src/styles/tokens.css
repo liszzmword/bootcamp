@@ -1,20 +1,23 @@
 /* ============================================================
-   디자인 토큰 — 3계층
-   Layer 1 (primitive): 리즈워드 브랜드 확정 시 이 블록만 교체
+   디자인 토큰 — 3계층 (Lee Inseop DS v3.0 적용본)
+   src/styles/tokens.css 를 이 파일로 교체
+   Layer 1 (primitive): DS 확정값
    Layer 2 (semantic):  컴포넌트는 이 계층만 참조 (Layer 1 직접 참조 금지)
    ============================================================ */
 :root {
-  /* ---- Layer 1: primitive (브랜드 placeholder) ---- */
+  /* ---- Layer 1: primitive (Lee Inseop DS) ---- */
   --brand-primary-500: #111111;
   --brand-primary-600: #2b2b2b;
-  --brand-accent-500: #1151ff;
-  --gray-0: #ffffff; --gray-50: #f5f5f5; --gray-100: #ededed;
-  --gray-200: #e5e5e5; --gray-300: #cacacb; --gray-400: #9e9ea0;
-  --gray-500: #707072; --gray-700: #39393b; --gray-900: #111111;
-  --red-500: #d30005; --green-600: #007d48; --amber-500: #f5a623;
-  --font-display: "Jost", "Futura", -apple-system, "Apple SD Gothic Neo", sans-serif;
-  --font-body: "Inter", "Helvetica Neue", -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
-  --radius-unit: 4px;
+  --brand-accent-500: #ff7120;          /* DS 유일 악센트 (구 #1151ff) */
+  --gray-0: #ffffff; --gray-50: #f7f7f5; --gray-100: #efefec;
+  --gray-200: #e6e6e6; --gray-300: #cfcfcf; --gray-400: #a3a3a3;
+  --gray-500: #666666; --gray-700: #2b2b2b; --gray-900: #111111;
+  /* 기능색: destructive/success 만 유지 (상태 강조는 accent 사용) */
+  --red-500: #d30005; --green-600: #007d48; --amber-500: #ff7120;
+  /* Pretendard 단일 서체 — index.html 에 CDN link 추가 필요 (HANDOFF.md 참조) */
+  --font-display: "Pretendard Variable", Pretendard, -apple-system, sans-serif;
+  --font-body: "Pretendard Variable", Pretendard, -apple-system, sans-serif;
+  --radius-unit: 3px;
 
   /* ---- Layer 2: semantic ---- */
   --color-bg: var(--gray-0);
@@ -30,42 +33,35 @@
   --color-action: var(--brand-primary-500);
   --color-action-hover: var(--brand-primary-600);
   --color-accent: var(--brand-accent-500);
-  --color-live: var(--red-500);
-  --color-danger: var(--red-500);
+  --color-live: var(--brand-accent-500);   /* LIVE = 오렌지 (구 빨강) */
+  --color-danger: var(--red-500);          /* 삭제 등 파괴적 액션만 */
   --color-success: var(--green-600);
-  --color-warning: var(--amber-500);
+  --color-warning: var(--brand-accent-500);/* 고정 배지 등 = 오렌지 */
 
-  --radius-sm: calc(var(--radius-unit) * 2);   /* 8  — 입력·칩 */
-  --radius-md: calc(var(--radius-unit) * 4);   /* 16 — 카드·시트 */
-  --radius-full: 9999px;
+  /* DS 라운드 0–8px — 필 금지 */
+  --radius-sm: calc(var(--radius-unit) * 2);   /* 6 — 입력·버튼 */
+  --radius-md: calc(var(--radius-unit) * 2.66);/* 8 — 카드·시트 */
+  --radius-full: 6px;                          /* 구 9999px 필 → 각지게 */
 
   --space-1: 4px; --space-2: 8px; --space-3: 12px;
   --space-4: 16px; --space-6: 24px; --space-8: 32px;
 
   --size-touch-min: 44px;
-  --shadow-card: 0 1px 3px rgba(0, 0, 0, .06);
-  --shadow-sheet: 0 -8px 32px rgba(0, 0, 0, .12);
-  --shadow-pop: 0 8px 32px rgba(0, 0, 0, .16);
+  /* DS: 그림자 없음 — 1px 보더/오프화이트 면으로 구분 */
+  --shadow-card: none;
+  --shadow-sheet: none;
+  --shadow-pop: 0 0 0 1px var(--gray-200);
   --motion-fast: 120ms ease;
   --motion-base: 200ms ease;
 
-  /* 팀 색상 8색 고정 팔레트 (hsl 회전 대체) */
-  --team-0: #e0533d; --team-1: #2f9e63; --team-2: #8a4fd3; --team-3: #d1a422;
-  --team-4: #d8447c; --team-5: #1d7fd1; --team-6: #d97a1f; --team-7: #4a9a97;
+  /* 팀 색상: 무채색 통일 — '내 팀' 강조는 컴포넌트에서 --color-accent 사용
+     (HANDOFF.md의 format.ts 수정 참조) */
+  --team-0: #2b2b2b; --team-1: #2b2b2b; --team-2: #2b2b2b; --team-3: #2b2b2b;
+  --team-4: #2b2b2b; --team-5: #2b2b2b; --team-6: #2b2b2b; --team-7: #2b2b2b;
 }
 
-/* 다크 테마 — 프로젝터 뷰 강제 적용 (semantic만 재정의) */
+/* 프로젝터: DS 원칙상 밝은 배경 — 다크 재정의 제거 (semantic 그대로 라이트)
+   PresentPage.tsx 의 data-theme="dark" 강제 useEffect 를 삭제할 것 */
 [data-theme="dark"] {
-  --color-bg: var(--gray-900);
-  --color-bg-subtle: #1c1c1e;
-  --color-bg-hover: #2a2a2c;
-  --color-bg-inverse: var(--gray-0);
-  --color-text: var(--gray-0);
-  --color-text-muted: var(--gray-400);
-  --color-text-faint: var(--gray-500);
-  --color-text-inverse: var(--gray-900);
-  --color-border: var(--gray-700);
-  --color-border-strong: var(--gray-500);
-  --color-action: var(--gray-0);
-  --color-action-hover: var(--gray-200);
+  /* intentionally empty — dark theme retired per DS */
 }

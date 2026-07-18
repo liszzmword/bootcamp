@@ -55,7 +55,7 @@
   color: var(--color-text-muted); text-decoration: none;
   transition: color var(--motion-fast);
 }
-.st-tab.active { color: var(--color-text); font-weight: 700; }
+.st-tab.active { color: var(--color-accent); font-weight: 700; }
 .st-tab-icon { position: relative; display: inline-flex; }
 .st-tab-dot {
   position: absolute; top: -2px; right: -6px;
@@ -84,22 +84,22 @@
 .chip {
   display: inline-flex; align-items: center; gap: 6px;
   background: var(--color-bg-subtle);
-  border-radius: var(--radius-full);
+  border-radius: 2px;
   padding: 4px 12px; font-size: 13px;
 }
 .team-inline { display: inline-flex; align-items: center; gap: 6px; }
 
 /* ---------- 홈 ---------- */
 .notice-list { display: flex; flex-direction: column; gap: var(--space-3); }
-.notice-card.pinned { border-color: var(--color-warning); }
+.notice-card.pinned { border-color: var(--color-border-strong); } /* 오렌지는 '고정' 배지 텍스트만 */
 .notice-card .badge { margin-bottom: var(--space-2); }
 .notice-body { white-space: pre-wrap; word-break: break-word; font-size: 14px; }
 .notice-date { display: block; margin-top: var(--space-2); color: var(--color-text-faint); font-size: 12px; }
 .order-summary { font-size: 15px; }
-.order-num { font-size: 20px; font-family: var(--font-display); }
+.order-num { font-size: 24px; font-weight: 900; color: var(--color-accent); font-family: var(--font-display); }
 .point-row { display: flex; gap: var(--space-4); }
 .point-item { flex: 1; display: flex; flex-direction: column; gap: 2px; text-align: center; }
-.point-value { font-family: var(--font-display); font-size: 22px; font-weight: 700; }
+.point-value { font-family: var(--font-display); font-size: 22px; font-weight: 900; }
 .point-label { color: var(--color-text-muted); font-size: 12px; }
 .info-list { display: flex; flex-direction: column; gap: var(--space-2); }
 .info-list > div { display: flex; gap: var(--space-3); align-items: center; }
@@ -164,10 +164,8 @@
   padding: var(--space-3) var(--space-4);
   min-height: var(--size-touch-min);
 }
-.tl-live {
-  border-color: var(--color-live);
-  box-shadow: 0 0 0 1px var(--color-live);
-}
+/* DS: 링 제거 — 번호·LIVE 라벨만 오렌지 텍스트 (목업 1d) */
+.tl-live { border-color: var(--color-border); }
 .tl-done { opacity: .55; }
 .tl-num {
   width: 24px; height: 24px; border-radius: 50%; flex-shrink: 0;
@@ -175,7 +173,7 @@
   display: flex; align-items: center; justify-content: center;
   font-size: 12px; font-weight: 700;
 }
-.tl-live .tl-num { background: var(--color-live); color: #fff; }
+.tl-live .tl-num { background: none; color: var(--color-live); font-weight: 900; }
 .tl-name {
   flex: 1; min-width: 0; display: flex; align-items: center; gap: var(--space-2);
   font-weight: 600; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
@@ -185,8 +183,7 @@
 /* ---------- 라이브: 현재 발표 카드 ---------- */
 .current-card {
   margin-top: var(--space-4);
-  border-color: var(--color-live);
-  box-shadow: 0 0 0 1px var(--color-live), var(--shadow-card);
+  border-color: var(--color-text); /* DS: 링 대신 1px 검정 보더로 현재 항목 구분 */
 }
 .current-head { display: flex; flex-direction: column; gap: var(--space-2); align-items: flex-start; }
 .current-actions { display: flex; gap: var(--space-3); align-items: center; flex-wrap: wrap; }
@@ -244,19 +241,20 @@
   background: var(--color-bg);
   padding: var(--space-2) 0 var(--space-3);
 }
+/* DS: 언더라인 탭 (목업 1f) */
 .chat-seg-btn {
   flex: 1; min-height: 40px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-full);
-  background: var(--color-bg);
+  border: none; border-bottom: 2px solid transparent;
+  border-radius: 0;
+  background: none;
   color: var(--color-text-muted);
   font-size: 14px; font-weight: 600;
   display: inline-flex; align-items: center; justify-content: center; gap: 6px;
 }
 .chat-seg-btn.active {
-  background: var(--color-bg-inverse);
-  border-color: var(--color-bg-inverse);
-  color: var(--color-text-inverse);
+  color: var(--color-text);
+  font-weight: 800;
+  border-bottom-color: var(--color-accent);
 }
 .seg-unread {
   min-width: 18px; height: 18px; border-radius: var(--radius-full);
@@ -282,13 +280,12 @@
   max-width: 80%;
   background: var(--color-bg-subtle);
   padding: 8px 14px;
-  border-radius: var(--radius-md) var(--radius-md) var(--radius-md) var(--space-1);
+  border-radius: var(--radius-md); /* DS: 균일 8px */
   font-size: 14px; white-space: pre-wrap; word-break: break-word;
 }
 .mine .bubble {
   background: var(--color-action);
   color: var(--color-text-inverse);
-  border-radius: var(--radius-md) var(--radius-md) var(--space-1) var(--radius-md);
 }
 .chat-input {
   position: fixed; z-index: 25;
