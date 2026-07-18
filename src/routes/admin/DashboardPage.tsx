@@ -9,7 +9,7 @@ import { toast } from '@/hooks/useStore';
 import { useProfile } from '@/hooks/useProfile';
 import { useSessionData } from '@/hooks/useSessionData';
 import { useDms, useEvaluations, useNotices } from '@/hooks/useData';
-import { Badge, Button, EmptyState, SectionHead, Sheet, TextArea } from '@/components/ui';
+import { Badge, Button, ClampText, EmptyState, SectionHead, Sheet, TextArea } from '@/components/ui';
 import { fmtDate } from '@/lib/format';
 import type { SessionRow } from '@/types/domain';
 import './admin.css';
@@ -124,7 +124,7 @@ function Dashboard({ session }: { session: SessionRow }) {
         recent.map((n) => (
           <div key={n.id} className="adm-notice">
             {n.pinned && <Badge tone="warning">고정</Badge>}
-            <p>{n.body}</p>
+            <ClampText lines={2} title="공지" text={n.body} />
             <time>{fmtDate(n.created_at)}</time>
           </div>
         ))

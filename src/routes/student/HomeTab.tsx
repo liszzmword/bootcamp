@@ -2,7 +2,7 @@
 import { useProfile } from '@/hooks/useProfile';
 import { useSessionData } from '@/hooks/useSessionData';
 import { useNotices, useQuizPoints, orderedTeams } from '@/hooks/useData';
-import { Badge, EmptyState, SectionHead, Dot } from '@/components/ui';
+import { Badge, ClampText, EmptyState, SectionHead, Dot } from '@/components/ui';
 import { ACCENT, fmtDate } from '@/lib/format';
 
 export default function HomeTab() {
@@ -44,7 +44,7 @@ export default function HomeTab() {
         {notices.map((n) => (
           <article key={n.id} className={`st-card notice-card ${n.pinned ? 'pinned' : ''}`}>
             {n.pinned && <Badge tone="warning">고정</Badge>}
-            <p className="notice-body">{n.body}</p>
+            <ClampText className="notice-body" lines={2} title="공지" text={n.body} />
             <span className="notice-date">{fmtDate(n.updated_at || n.created_at)}</span>
           </article>
         ))}

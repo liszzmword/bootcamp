@@ -111,6 +111,37 @@ export function Sheet({ open, onClose, title, children }: {
   );
 }
 
+/* ---------- ClampText: n줄 클램프, 실제 오버플로일 때만 …더보기 → Sheet 전문 ---------- */
+export function ClampText({ text, lines = 2, title, className = '' }: {
+  text: string; lines?: 2 | 3; title: string; className?: string;
+}) {
+  const ref = useRef<HTMLParagraphElement>(null);
+  const [overflow, setOverflow] = useState(false);
+  const [open, setOpen] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const check = () => setOverflow(el.scrollHeight > el.clientHeight + 1);
+    check();
+    const ro = new ResizeObserver(check);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [text, lines]);
+  return (
+    <div className={`clamp-wrap ${className}`}>
+      <p ref={ref} className={`clamp-${lines}`}>{text}</p>
+      {overflow && (
+        <button type="button" className="clamp-more" onClick={() => setOpen(true)}>…더보기</button>
+      )}
+      {open && (
+        <Sheet open onClose={() => setOpen(false)} title={title}>
+          <p className="clamp-full">{text}</p>
+        </Sheet>
+      )}
+    </div>
+  );
+}
+
 /* ---------- Confirm ---------- */
 export function ConfirmSheet({ open, onClose, title, desc, okLabel = '확인', danger, onOk }: {
   open: boolean; onClose: () => void; title: string; desc?: string;

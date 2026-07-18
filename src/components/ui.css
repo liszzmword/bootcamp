@@ -77,6 +77,22 @@ textarea.field { min-height: 88px; resize: vertical; }
   }
 }
 
+/* ---------- ClampText ---------- */
+.clamp-wrap { display: flex; flex-direction: column; min-width: 0; }
+.clamp-2, .clamp-3 {
+  display: -webkit-box; -webkit-box-orient: vertical; overflow: hidden;
+  white-space: pre-wrap; word-break: break-word;
+}
+.clamp-2 { -webkit-line-clamp: 2; }
+.clamp-3 { -webkit-line-clamp: 3; }
+.clamp-more {
+  background: none; border: none; padding: 2px 0 0;
+  align-self: flex-end;
+  font-size: 12px; font-weight: 600;
+  color: var(--color-text-muted);
+}
+.clamp-full { white-space: pre-wrap; word-break: break-word; font-size: 14px; }
+
 /* ---------- 기타 ---------- */
 .empty-state { color: var(--color-text-faint); font-size: 14px; padding: var(--space-8) 0; text-align: center; }
 .team-dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; flex-shrink: 0; }

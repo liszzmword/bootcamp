@@ -2,7 +2,7 @@
 import { useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { deletePpt, pptDownloadUrl, setMyWork, updateTeamField, uploadPpt } from '@/api';
-import { Button, ConfirmSheet, Dot, EmptyState, SectionHead, TextArea, TextInput, SaveButton, useSaveField } from '@/components/ui';
+import { Button, ClampText, ConfirmSheet, Dot, EmptyState, SectionHead, TextArea, TextInput, SaveButton, useSaveField } from '@/components/ui';
 import { errMsg } from '@/lib/errors';
 import { ACCENT, fmtDate, fmtSize, isHttpUrl, normalizeUrl, teamColor } from '@/lib/format';
 import { toast } from '@/hooks/useStore';
@@ -160,7 +160,7 @@ function TeamCard({ session, team, members, feedback }: {
         <ul className="feedback-list">
           {myFeedback.map((f, i) => (
             <li key={i} className="feedback-item">
-              <p>{f.comment}</p>
+              <ClampText lines={3} title="익명 피드백" text={f.comment} />
               <span className="muted">{fmtDate(f.updated_at)}</span>
             </li>
           ))}
@@ -226,7 +226,7 @@ function IndividualSection({ session, me, people }: {
               {p.id === me.id && <span className="muted">(나)</span>}
               <OpenLink value={p.work_link} />
             </div>
-            {p.work_memo && <p className="submit-memo">{p.work_memo}</p>}
+            {p.work_memo && <ClampText className="submit-memo" lines={2} title={`${p.name} — 제출 메모`} text={p.work_memo} />}
           </li>
         ))}
       </ul>
@@ -279,7 +279,7 @@ export default function MyTeamTab() {
                     <OpenLink value={t.link} />
                   </div>
                   <p className="muted">{members.length ? members.map((m) => m.name).join(', ') : '팀원 없음'}</p>
-                  {t.memo && <p className="submit-memo">{t.memo}</p>}
+                  {t.memo && <ClampText className="submit-memo" lines={2} title={`${t.name} — 팀 메모`} text={t.memo} />}
                 </li>
               );
             })}
