@@ -1,6 +1,6 @@
 /* 관리자 라이브·평가·퀴즈·메시지·아카이브 공용 스타일 — 접두사 al-, semantic 토큰만 */
 .al-page { display: flex; flex-direction: column; gap: var(--space-4); padding-bottom: var(--space-8); }
-.al-grid { display: grid; gap: var(--space-4); grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); align-items: start; }
+.al-grid { display: grid; gap: var(--space-4); grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); } /* stretch: 같은 줄 카드 높이 통일 */
 .al-cols { display: grid; gap: var(--space-6); grid-template-columns: 1fr 1fr; align-items: start; }
 @media (max-width: 900px) { .al-cols { grid-template-columns: 1fr; } }
 .al-card {

@@ -6,7 +6,7 @@ import { useProfile } from '@/hooks/useProfile';
 import { useSessionData } from '@/hooks/useSessionData';
 import { toast } from '@/hooks/useStore';
 import { downloadCsv, fmtDate, fmtSize, isHttpUrl, normalizeUrl, teamColor } from '@/lib/format';
-import { Button, Dot, EmptyState, SectionHead } from '@/components/ui';
+import { Button, ClampText, Dot, EmptyState, SectionHead } from '@/components/ui';
 import type { SessionRow, Submission } from '@/types/domain';
 import './adminlive.css';
 
@@ -175,7 +175,7 @@ function ArchiveBody({ session }: { session: SessionRow }) {
                       : '—'}
                   </dd>
                   <dt>메모</dt>
-                  <dd className="al-pre">{t.memo.trim() || '—'}</dd>
+                  <dd>{t.memo.trim() ? <ClampText className="al-pre" lines={2} title={`${t.name} — 팀 메모`} text={t.memo} /> : '—'}</dd>
                 </dl>
               </div>
             ))}
@@ -197,7 +197,7 @@ function ArchiveBody({ session }: { session: SessionRow }) {
                   )}
                 </div>
                 {p.work_link.trim() !== '' && <div>{linkOrText(p.work_link)}</div>}
-                {p.work_memo.trim() !== '' && <p className="al-pre al-muted">{p.work_memo}</p>}
+                {p.work_memo.trim() !== '' && <ClampText className="al-pre al-muted" lines={2} title={`${p.name} — 제출 메모`} text={p.work_memo} />}
               </div>
             ))}
           </div>

@@ -4,7 +4,7 @@ import { useProfile } from '@/hooks/useProfile';
 import { useSessionData } from '@/hooks/useSessionData';
 import { orderedTeams, useNotices } from '@/hooks/useData';
 import { fmtDate, isHttpUrl, normalizeUrl, teamColor } from '@/lib/format';
-import { Badge, Button, Dot, EmptyState, SectionHead } from '@/components/ui';
+import { Badge, Button, ClampText, Dot, EmptyState, SectionHead } from '@/components/ui';
 import './judge/judge.css';
 
 export default function ViewPage() {
@@ -52,7 +52,7 @@ export default function ViewPage() {
                   {n.pinned && <Badge tone="success">고정</Badge>}
                   <span>{fmtDate(n.updated_at ?? n.created_at)}</span>
                 </div>
-                <p className="jd-notice-body">{n.body}</p>
+                <ClampText className="jd-notice-body" lines={2} title="공지" text={n.body} />
               </li>
             ))}
           </ul>
@@ -105,7 +105,7 @@ export default function ViewPage() {
                           <ul>
                             {fbs.map((f, i) => (
                               <li key={i}>
-                                <p>{f.comment}</p>
+                                <ClampText lines={3} title="익명 피드백" text={f.comment} />
                                 <span className="jd-fb-date">{fmtDate(f.updated_at)}</span>
                               </li>
                             ))}
@@ -139,7 +139,7 @@ export default function ViewPage() {
                           <a href={link} target="_blank" rel="noreferrer">작업물 링크 ↗</a>
                         </div>
                       )}
-                      {p.work_memo.trim() && <p className="jd-members">{p.work_memo}</p>}
+                      {p.work_memo.trim() !== '' && <ClampText className="jd-members" lines={2} title={`${p.name} — 제출 메모`} text={p.work_memo} />}
                     </div>
                   );
                 })}

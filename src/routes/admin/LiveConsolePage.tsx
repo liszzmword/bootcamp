@@ -10,7 +10,7 @@ import { useSessionData } from '@/hooks/useSessionData';
 import { toast } from '@/hooks/useStore';
 import { errMsg } from '@/lib/errors';
 import { teamColor } from '@/lib/format';
-import { Badge, Button, Dot, EmptyState, SectionHead } from '@/components/ui';
+import { Badge, Button, ClampText, Dot, EmptyState, SectionHead } from '@/components/ui';
 import type { SessionRow } from '@/types/domain';
 import './adminlive.css';
 
@@ -312,7 +312,7 @@ function Console({ session }: { session: SessionRow }) {
           {liveQuiz ? (
             <div className="al-row">
               <Badge tone="live">진행 중</Badge>
-              <span className="al-quiz-q">{liveQuiz.question}</span>
+              <ClampText className="al-quiz-q" lines={2} title="퀴즈 문항" text={liveQuiz.question} />
               <span className="al-timer-sm">남은 {quizRemain}초</span>
               <Button
                 size="sm"

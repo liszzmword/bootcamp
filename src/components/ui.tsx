@@ -131,12 +131,16 @@ export function ClampText({ text, lines = 2, title, className = '' }: {
     <div className={`clamp-wrap ${className}`}>
       <p ref={ref} className={`clamp-${lines}`}>{text}</p>
       {overflow && (
-        <button type="button" className="clamp-more" onClick={() => setOpen(true)}>…더보기</button>
+        <button type="button" className="clamp-more"
+          onClick={(e) => { e.stopPropagation(); setOpen(true); }}>…더보기</button>
       )}
       {open && (
-        <Sheet open onClose={() => setOpen(false)} title={title}>
-          <p className="clamp-full">{text}</p>
-        </Sheet>
+        /* 클릭 가능한 행(row onClick) 안에서도 Sheet 내부 클릭이 부모로 전파되지 않게 격리 */
+        <span onClick={(e) => e.stopPropagation()}>
+          <Sheet open onClose={() => setOpen(false)} title={title}>
+            <p className="clamp-full">{text}</p>
+          </Sheet>
+        </span>
       )}
     </div>
   );

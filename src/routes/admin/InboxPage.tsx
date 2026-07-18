@@ -8,7 +8,7 @@ import { useSessionData } from '@/hooks/useSessionData';
 import { toast } from '@/hooks/useStore';
 import { errMsg } from '@/lib/errors';
 import { fmtDate } from '@/lib/format';
-import { Badge, Button, ConfirmSheet, EmptyState, SectionHead, Sheet, TextArea } from '@/components/ui';
+import { Badge, Button, ClampText, ConfirmSheet, EmptyState, SectionHead, Sheet, TextArea } from '@/components/ui';
 import type { DmMessage, Notice, SessionRow } from '@/types/domain';
 import './adminlive.css';
 
@@ -205,7 +205,7 @@ function InboxBody({ session }: { session: SessionRow }) {
                       <Button size="sm" variant="ghost" onClick={() => setDelNotice(n)}>삭제</Button>
                     </span>
                   </div>
-                  <p className="al-pre">{n.body}</p>
+                  <ClampText className="al-pre" lines={2} title="공지" text={n.body} />
                 </div>
               ))
             )}

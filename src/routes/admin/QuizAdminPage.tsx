@@ -8,7 +8,7 @@ import { useSessionData } from '@/hooks/useSessionData';
 import { toast } from '@/hooks/useStore';
 import { errMsg } from '@/lib/errors';
 import { teamColor } from '@/lib/format';
-import { Badge, Button, ConfirmSheet, Dot, EmptyState, SectionHead, TextArea, TextInput } from '@/components/ui';
+import { Badge, Button, ClampText, ConfirmSheet, Dot, EmptyState, SectionHead, TextArea, TextInput } from '@/components/ui';
 import type { Quiz, SessionRow } from '@/types/domain';
 import './adminlive.css';
 
@@ -185,7 +185,7 @@ function QuizBody({ session }: { session: SessionRow }) {
                   {q.status === 'draft' && <Badge>대기</Badge>}
                   {q.status === 'open' && <Badge tone="live">진행 중</Badge>}
                   {q.status === 'closed' && <Badge tone="success">마감</Badge>}
-                  <span className="al-quiz-q">{q.question}</span>
+                  <ClampText className="al-quiz-q" lines={2} title="퀴즈 문항" text={q.question} />
                   {remainSec != null && <span className="al-timer-sm">남은 {remainSec}초</span>}
                   {q.status === 'draft' && (
                     <Button size="sm" variant="primary" onClick={(e) => { e.stopPropagation(); void fire(q.id); }}>출제</Button>

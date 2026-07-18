@@ -9,7 +9,7 @@ import { toast } from '@/hooks/useStore';
 import { errMsg } from '@/lib/errors';
 import { downloadCsv, fmtDate, teamColor } from '@/lib/format';
 import {
-  Badge, Button, ConfirmSheet, Dot, EmptyState, SaveButton, SectionHead, Sheet, TextInput, useSaveField,
+  Badge, Button, ClampText, ConfirmSheet, Dot, EmptyState, SaveButton, SectionHead, Sheet, TextInput, useSaveField,
 } from '@/components/ui';
 import { computeEvalStats } from '@/types/domain';
 import type { Evaluation, Judge, SessionRow } from '@/types/domain';
@@ -256,7 +256,7 @@ function EvalBody({ session }: { session: SessionRow }) {
                   {e.score != null && <Badge tone="success">{e.score}점</Badge>}
                   <span className="al-muted">{fmtDate(e.updated_at)}</span>
                 </div>
-                {e.comment.trim() !== '' && <p className="al-pre">{e.comment}</p>}
+                {e.comment.trim() !== '' && <ClampText className="al-pre" lines={3} title="평가 코멘트" text={e.comment} />}
               </div>
             ))}
           </div>
