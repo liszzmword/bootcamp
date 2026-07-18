@@ -103,7 +103,6 @@ export function Sheet({ open, onClose, title, children }: {
     <dialog ref={ref} className="sheet" onCancel={(e) => { e.preventDefault(); onClose(); }}
       onClick={(e) => { if (e.target === ref.current) onClose(); }}>
       <div className="sheet-body">
-        <div className="sheet-grab" aria-hidden />
         {title && <h2 className="sheet-title">{title}</h2>}
         {children}
       </div>
