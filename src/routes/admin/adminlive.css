@@ -138,3 +138,7 @@
 .al-kv { display: grid; grid-template-columns: 64px 1fr; gap: 4px var(--space-2); font-size: 14px; margin: 0; }
 .al-kv dt { color: var(--color-text-muted); font-size: 13px; }
 .al-kv dd { margin: 0; min-width: 0; word-break: break-all; }
+.al-detail { row-gap: var(--space-2); }
+.al-api { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; }
+.al-api-row { display: flex; align-items: center; gap: var(--space-2); }
+.al-api-full { flex: 1; min-width: 0; word-break: break-all; font-size: 13px; }

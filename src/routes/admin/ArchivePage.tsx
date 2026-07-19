@@ -6,8 +6,8 @@ import { useProfile } from '@/hooks/useProfile';
 import { useSessionData } from '@/hooks/useSessionData';
 import { toast } from '@/hooks/useStore';
 import { downloadCsv, fmtDate, fmtSize, isHttpUrl, normalizeUrl, teamColor } from '@/lib/format';
-import { Button, ClampText, Dot, EmptyState, SectionHead } from '@/components/ui';
-import type { SessionRow, Submission } from '@/types/domain';
+import { Button, ClampText, Dot, EmptyState, SectionHead, Sheet } from '@/components/ui';
+import type { SessionRow, Submission, Team } from '@/types/domain';
 import './adminlive.css';
 
 const FIELD_LABELS: Record<string, string> = {
@@ -75,12 +75,31 @@ function ArchiveBody({ session }: { session: SessionRow }) {
 
   /* ---------- 현재 자료 ---------- */
   const submitters = people.filter((p) => p.work_link.trim() !== '' || p.work_memo.trim() !== '');
+  const [detail, setDetail] = useState<Team | null>(null);
 
   const linkOrText = (v: string) => {
     const u = normalizeUrl(v);
     return isHttpUrl(u)
       ? <a href={u} target="_blank" rel="noreferrer">{shortUrl(v)}</a>
       : <span>{shortUrl(v)}</span>;
+  };
+
+  /* 상세 팝업용 — 절단 없이 전체 표시 */
+  const fullLinkOrText = (v: string) => {
+    if (!v.trim()) return '—';
+    const u = normalizeUrl(v);
+    return isHttpUrl(u)
+      ? <a href={u} target="_blank" rel="noreferrer">{u}</a>
+      : <span>{v}</span>;
+  };
+
+  const copyApi = async (api: string) => {
+    try {
+      await navigator.clipboard.writeText(api);
+      toast('API 키를 복사했습니다', 'success');
+    } catch {
+      toast('복사에 실패했습니다', 'error');
+    }
   };
 
   /* ---------- 전체 CSV (RosterPage와 동일 형식) ---------- */
@@ -158,7 +177,10 @@ function ArchiveBody({ session }: { session: SessionRow }) {
           <div className="al-grid">
             {teams.map((t) => (
               <div key={t.idx} className="al-card">
-                <div className="al-row"><Dot color={teamColor(t.idx)} /><strong>{t.name}</strong></div>
+                <div className="al-row">
+                  <Dot color={teamColor(t.idx)} /><strong>{t.name}</strong>
+                  <Button size="sm" variant="ghost" style={{ marginLeft: 'auto' }} onClick={() => setDetail(t)}>상세</Button>
+                </div>
                 <dl className="al-kv">
                   <dt>PPT</dt>
                   <dd>{t.ppt.trim() ? linkOrText(t.ppt) : '—'}</dd>
@@ -174,8 +196,10 @@ function ArchiveBody({ session }: { session: SessionRow }) {
                       )
                       : '—'}
                   </dd>
+                  <dt>API</dt>
+                  <dd>{t.api ? <code className="al-api">{t.api}</code> : '—'}</dd>
                   <dt>메모</dt>
-                  <dd>{t.memo.trim() ? <ClampText className="al-pre" lines={2} title={`${t.name} — 팀 메모`} text={t.memo} /> : '—'}</dd>
+                  <dd>{t.memo.trim() ? <ClampText className="al-pre" lines={2} text={t.memo} onMore={() => setDetail(t)} /> : '—'}</dd>
                 </dl>
               </div>
             ))}
@@ -203,6 +227,41 @@ function ArchiveBody({ session }: { session: SessionRow }) {
           </div>
         )}
       </div>
+
+      {/* 팀 상세 — 전 항목 절단 없이 */}
+      {detail && (
+        <Sheet open onClose={() => setDetail(null)} title={detail.name}>
+          <dl className="al-kv al-detail">
+            <dt>PPT</dt>
+            <dd>{fullLinkOrText(detail.ppt)}</dd>
+            <dt>서비스</dt>
+            <dd>{fullLinkOrText(detail.link)}</dd>
+            <dt>파일</dt>
+            <dd>
+              {detail.ppt_file
+                ? (
+                  <a href={pptDownloadUrl(sid, detail.idx, detail.ppt_file)}>
+                    {detail.ppt_file.name} ({fmtSize(detail.ppt_file.size)})
+                  </a>
+                )
+                : '—'}
+            </dd>
+            <dt>API</dt>
+            <dd>
+              {detail.api
+                ? (
+                  <span className="al-api-row">
+                    <code className="al-api-full">{detail.api}</code>
+                    <Button size="sm" onClick={() => void copyApi(detail.api!)}>복사</Button>
+                  </span>
+                )
+                : '—'}
+            </dd>
+            <dt>메모</dt>
+            <dd className="al-pre">{detail.memo.trim() || '—'}</dd>
+          </dl>
+        </Sheet>
+      )}
     </div>
   );
 }

@@ -110,9 +110,10 @@ export function Sheet({ open, onClose, title, children }: {
   );
 }
 
-/* ---------- ClampText: n줄 클램프, 실제 오버플로일 때만 …더보기 → Sheet 전문 ---------- */
-export function ClampText({ text, lines = 2, title, className = '' }: {
-  text: string; lines?: 2 | 3; title: string; className?: string;
+/* ---------- ClampText: n줄 클램프, 실제 오버플로일 때만 …더보기 → Sheet 전문
+   onMore 지정 시 내부 텍스트 Sheet 대신 호출측 팝업에 위임 (예: 아카이브 팀 상세) ---------- */
+export function ClampText({ text, lines = 2, title, className = '', onMore }: {
+  text: string; lines?: 2 | 3; title?: string; className?: string; onMore?: () => void;
 }) {
   const ref = useRef<HTMLParagraphElement>(null);
   const [overflow, setOverflow] = useState(false);
@@ -131,9 +132,9 @@ export function ClampText({ text, lines = 2, title, className = '' }: {
       <p ref={ref} className={`clamp-${lines}`}>{text}</p>
       {overflow && (
         <button type="button" className="clamp-more"
-          onClick={(e) => { e.stopPropagation(); setOpen(true); }}>…더보기</button>
+          onClick={(e) => { e.stopPropagation(); if (onMore) onMore(); else setOpen(true); }}>…더보기</button>
       )}
-      {open && (
+      {open && !onMore && (
         /* 클릭 가능한 행(row onClick) 안에서도 Sheet 내부 클릭이 부모로 전파되지 않게 격리 */
         <span onClick={(e) => e.stopPropagation()}>
           <Sheet open onClose={() => setOpen(false)} title={title}>
