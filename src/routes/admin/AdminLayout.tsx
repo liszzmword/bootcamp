@@ -7,7 +7,7 @@ import { errMsg } from '@/lib/errors';
 import { toast } from '@/hooks/useStore';
 import { useProfile } from '@/hooks/useProfile';
 import { useRealtimeSession } from '@/hooks/useRealtime';
-import { Button, EmptyState, TextInput } from '@/components/ui';
+import { Button, EmptyState, Sheet, TextInput } from '@/components/ui';
 import { fmtDate } from '@/lib/format';
 import './admin.css';
 
@@ -40,6 +40,8 @@ export default function AdminLayout() {
     }
   };
 
+  const [showCreate, setShowCreate] = useState(false);
+
   const doLogout = async () => {
     try {
       await logout();
@@ -61,16 +63,19 @@ export default function AdminLayout() {
     <div className="adm-shell">
       <aside className="adm-side">
         <div className="adm-brand">Admin</div>
-        <select
-          className="adm-session-select"
-          value={session.id}
-          aria-label="세션 선택"
-          onChange={(e) => { if (e.target.value !== session.id) void switchSession(e.target.value); }}
-        >
-          {sessions.map((s) => (
-            <option key={s.id} value={s.id}>{s.name}</option>
-          ))}
-        </select>
+        <div className="adm-session-ctrl">
+          <select
+            className="adm-session-select"
+            value={session.id}
+            aria-label="세션 선택"
+            onChange={(e) => { if (e.target.value !== session.id) void switchSession(e.target.value); }}
+          >
+            {sessions.map((s) => (
+              <option key={s.id} value={s.id}>{s.name}</option>
+            ))}
+          </select>
+          <Button size="sm" variant="ghost" onClick={() => setShowCreate(true)}>만들기</Button>
+        </div>
         <nav className="adm-nav">
           {MENU.map((m) => (
             <NavLink
@@ -90,7 +95,50 @@ export default function AdminLayout() {
       <main className="adm-main">
         <Outlet />
       </main>
+      <CreateSessionSheet open={showCreate} onClose={() => setShowCreate(false)} />
     </div>
+  );
+}
+
+function CreateSessionSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const qc = useQueryClient();
+  const [name, setName] = useState('');
+  const [code, setCode] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  const create = async () => {
+    if (!name.trim() || !code.trim()) { toast('교육 이름과 참여코드를 입력하세요.', 'error'); return; }
+    setBusy(true);
+    try {
+      await createSession(name.trim(), code.trim());
+      await qc.invalidateQueries();
+      toast(`'${name.trim()}' 교육을 만들었습니다`, 'success');
+      setName(''); setCode('');
+      onClose();
+    } catch (e) {
+      toast(errMsg(e), 'error');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Sheet open={open} onClose={onClose} title="세션 만들기">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+        <div>
+          <label style={{ display: 'block', fontSize: 13, color: 'var(--color-text-muted)', marginBottom: 4 }}>교육 이름</label>
+          <TextInput value={name} onChange={(e) => setName(e.target.value)} placeholder="예: 2024 여름 부트캠프" />
+        </div>
+        <div>
+          <label style={{ display: 'block', fontSize: 13, color: 'var(--color-text-muted)', marginBottom: 4 }}>참여코드</label>
+          <TextInput value={code} onChange={(e) => setCode(e.target.value)} placeholder="학생이 입장할 때 입력하는 코드" autoComplete="off" />
+        </div>
+        <div style={{ display: 'flex', gap: 'var(--space-2)', justifyContent: 'flex-end' }}>
+          <Button onClick={onClose}>취소</Button>
+          <Button variant="primary" loading={busy} onClick={() => void create()}>만들기</Button>
+        </div>
+      </div>
+    </Sheet>
   );
 }
 

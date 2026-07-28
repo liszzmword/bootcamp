@@ -172,6 +172,17 @@ function Roster({ session }: { session: SessionRow }) {
     }
   };
 
+  const downloadSample = () => {
+    const sampleData = [
+      ['성명', '학번', '소속'],
+      ['홍길동', '2024001', '컴퓨터공학과'],
+      ['김영희', '2024002', '경영학과'],
+      ['이순신', '2024003', ''],
+    ];
+    downloadCsv(sampleData, '명단_샘플.csv');
+    toast('샘플 파일을 내려받았습니다', 'success');
+  };
+
   const exportCsv = () => {
     const rows: unknown[][] = [['팀', '이름', '학번', '소속', 'API 키', 'PPT', '서비스', '메모']];
     const teamRow = (t: Team | undefined, p: Person, label: string) =>
@@ -200,6 +211,9 @@ function Roster({ session }: { session: SessionRow }) {
           </Button>
         }
       />
+      <div style={{ marginBottom: 'var(--space-3)' }}>
+        <Button size="sm" variant="ghost" onClick={downloadSample}>샘플 다운로드</Button>
+      </div>
       <div
         className={'adm-dropzone' + (dragOver ? ' is-over' : '')}
         onClick={() => fileRef.current?.click()}

@@ -28,8 +28,14 @@
   text-transform: uppercase;
   letter-spacing: .5px;
 }
+.adm-session-ctrl {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+}
 .adm-session-select {
-  width: 100%;
+  flex: 1;
+  min-width: 0;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
   background: var(--color-bg);
@@ -90,7 +96,9 @@
     gap: var(--space-2);
   }
   .adm-brand { display: none; }
-  .adm-session-select { width: auto; max-width: 140px; flex-shrink: 0; min-height: 38px; }
+  .adm-session-ctrl { gap: 4px; }
+  .adm-session-select { flex: none; width: auto; max-width: 140px; flex-shrink: 0; min-height: 38px; }
+  .adm-session-ctrl .btn { flex-shrink: 0; }
   .adm-nav { flex-direction: row; gap: 2px; }
   .adm-nav-link { padding: 8px 10px; font-size: 13px; }
   .adm-side-foot { margin-top: 0; margin-left: auto; flex-shrink: 0; }
