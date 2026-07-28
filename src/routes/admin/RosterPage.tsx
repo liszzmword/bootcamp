@@ -63,10 +63,13 @@ function Roster({ session }: { session: SessionRow }) {
       if (!entries.length) { toast('파일에서 이름을 찾지 못했습니다.', 'error'); return; }
       const r = await mergeRoster(entries);
 
-      // 팀 정보 있는 항목 자동 배정 — invalidate 후 캐시된 people으로 매칭
+      // 팀 정보 있는 항목 자동 배정 — refetch 후 업데이트된 people으로 매칭
       const entriesWithTeam = entries.filter((e) => e.team != null);
       if (entriesWithTeam.length > 0) {
-        await invalidate();
+        await Promise.all([
+          qc.refetchQueries({ queryKey: ['sessionData', sid] }),
+          qc.refetchQueries({ queryKey: ['profile'] }),
+        ]);
         const cachedData = qc.getQueryData(['sessionData', sid]);
         const updatedPeople = (cachedData as any)?.people ?? [];
         const assignOps = entriesWithTeam
