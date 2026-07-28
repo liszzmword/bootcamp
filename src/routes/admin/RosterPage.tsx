@@ -63,7 +63,22 @@ function Roster({ session }: { session: SessionRow }) {
       if (!entries.length) { toast('파일에서 이름을 찾지 못했습니다.', 'error'); return; }
       const r = await mergeRoster(entries);
       await invalidate();
-      toast(`명단 반영 완료 — 유지 ${r.kept} · 추가 ${r.added} · 제거 ${r.removed}`, 'success');
+
+      // 팀 정보 있는 항목 자동 배정
+      const entriesWithTeam = entries.filter((e) => e.team != null);
+      if (entriesWithTeam.length > 0 && people.length > 0) {
+        const assignOps = entriesWithTeam
+          .map((e) => {
+            const p = people.find((x) => x.name === e.name);
+            return p ? { id: p.id, team: e.team!, pin: e.team! } : null;
+          })
+          .filter((x) => x !== null);
+        if (assignOps.length > 0) await applyAssign(assignOps);
+      }
+
+      await invalidate();
+      const assignedCount = entriesWithTeam.length;
+      toast(`명단 반영 완료 — 유지 ${r.kept} · 추가 ${r.added} · 제거 ${r.removed}${assignedCount > 0 ? ` · 팀 배정 ${assignedCount}명` : ''}`, 'success');
     } catch (e) {
       toast(errMsg(e), 'error');
     } finally {

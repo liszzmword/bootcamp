@@ -86,9 +86,10 @@ export interface RosterEntry {
   name: string;
   dept: string;
   sno: string;
+  team?: number;
 }
 
-/** 헤더(성명/학번/소속) 자동 인식, 헤더 없으면 한글 이름 패턴 열 추정. 동명이인은 (n) 접미사 */
+/** 헤더(성명/학번/소속/조) 자동 인식, 헤더 없으면 한글 이름 패턴 열 추정. 동명이인은 (n) 접미사 */
 export function extractPeople(rows: string[][]): RosterEntry[] {
   const clean = rows.filter((r) => r.some((c) => c));
   if (!clean.length) return [];
@@ -96,6 +97,7 @@ export function extractPeople(rows: string[][]): RosterEntry[] {
   let nameCol = header.findIndex((h) => /성명|이름|name/i.test(h));
   let deptCol = header.findIndex((h) => /소속|학과|전공|부서/i.test(h));
   let snoCol = header.findIndex((h) => /학번|사번|student/i.test(h));
+  let teamCol = header.findIndex((h) => /조|팀|team|group/i.test(h));
   let dataRows: string[][];
   if (nameCol >= 0) {
     dataRows = clean.slice(1);
@@ -110,6 +112,7 @@ export function extractPeople(rows: string[][]): RosterEntry[] {
     nameCol = best;
     deptCol = -1;
     snoCol = -1;
+    teamCol = -1;
     dataRows = /연번|번호|no\.?|이메일|캠퍼스/i.test(header.join(' ')) ? clean.slice(1) : clean;
   }
   const seen = new Map<string, number>();
@@ -120,11 +123,17 @@ export function extractPeople(rows: string[][]): RosterEntry[] {
     const k = seen.get(name) || 0;
     seen.set(name, k + 1);
     if (k > 0) name = `${name}(${k + 1})`;
-    out.push({
+    const entry: RosterEntry = {
       name,
       dept: deptCol >= 0 ? (r[deptCol] || '').trim() : '',
       sno: snoCol >= 0 ? (r[snoCol] || '').trim() : '',
-    });
+    };
+    if (teamCol >= 0) {
+      const teamStr = (r[teamCol] || '').trim();
+      const teamNum = parseInt(teamStr, 10);
+      if (!isNaN(teamNum) && teamNum > 0) entry.team = teamNum - 1;
+    }
+    out.push(entry);
   }
   return out;
 }
