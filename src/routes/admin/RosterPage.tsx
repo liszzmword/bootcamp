@@ -62,14 +62,16 @@ function Roster({ session }: { session: SessionRow }) {
       const entries = await parseRosterFile(f);
       if (!entries.length) { toast('파일에서 이름을 찾지 못했습니다.', 'error'); return; }
       const r = await mergeRoster(entries);
-      await invalidate();
 
-      // 팀 정보 있는 항목 자동 배정
+      // 팀 정보 있는 항목 자동 배정 — invalidate 후 캐시된 people으로 매칭
       const entriesWithTeam = entries.filter((e) => e.team != null);
-      if (entriesWithTeam.length > 0 && people.length > 0) {
+      if (entriesWithTeam.length > 0) {
+        await invalidate();
+        const cachedData = qc.getQueryData(['sessionData', sid]);
+        const updatedPeople = (cachedData as any)?.people ?? [];
         const assignOps = entriesWithTeam
           .map((e) => {
-            const p = people.find((x) => x.name === e.name);
+            const p = updatedPeople.find((x: any) => x.name === e.name);
             return p ? { id: p.id, team: e.team!, pin: e.team! } : null;
           })
           .filter((x) => x !== null);
